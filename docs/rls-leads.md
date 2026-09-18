@@ -16,7 +16,7 @@ O browser **nunca** recebe `SUPABASE_SERVICE_ROLE_KEY`. No cliente só entram:
 - `SUPABASE_ANON_KEY`
 - `TURNSTILE_SITE_KEY`
 
-Signup Auth: anon key no servidor (`/api/auth/*`). Confirmação de e-mail obrigatória antes de `accounts` + `quota_usage`. MFA TOTP (Supabase Auth) é o passo seguinte em `/conta` — enroll só com e-mail confirmado; verify com rate limit.
+Signup Auth: anon key no servidor (`/api/auth/*`). Confirmação de e-mail obrigatória antes de `accounts` + `quota_usage`. MFA TOTP (Supabase Auth) é o passo seguinte em `/app` — enroll só com e-mail confirmado; verify com rate limit.
 
 O SQL em `supabase/migrations/001_schema_minimo.sql` já liga RLS. Policy `leads_owner_select` só libera SELECT depois de `account_id` + owner. **Não há policy de INSERT para anon** — o form passa por `createSupabaseClient` (service role) depois do captcha.
 

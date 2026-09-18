@@ -113,9 +113,12 @@ function safeJoin(root: string, requestPath: string): string | null {
 }
 
 async function serveStatic(res: ServerResponse, webRoot: string, urlPath: string): Promise<void> {
+  // Rotas curtas HTTPS, sem query. /planos = âncora da landing; /app = área logada (alias /conta).
   const pageMap: Record<string, string> = {
     '/': 'index.html',
     '/index.html': 'index.html',
+    '/planos': 'index.html',
+    '/planos.html': 'index.html',
     '/privacidade': 'privacidade.html',
     '/privacidade.html': 'privacidade.html',
     '/termos': 'termos.html',
@@ -124,6 +127,8 @@ async function serveStatic(res: ServerResponse, webRoot: string, urlPath: string
     '/entrar.html': 'entrar.html',
     '/cadastro': 'cadastro.html',
     '/cadastro.html': 'cadastro.html',
+    '/app': 'conta.html',
+    '/app.html': 'conta.html',
     '/conta': 'conta.html',
     '/conta.html': 'conta.html',
   };

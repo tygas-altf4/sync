@@ -72,11 +72,13 @@ describe('HTTP MFA TOTP', () => {
     });
   });
 
-  it('UI documenta o caminho TOTP em /conta /entrar /cadastro', async () => {
-    const conta = await (await fetch(`${base}/conta`)).text();
-    assert.match(conta, /2FA \(TOTP\)/);
-    assert.match(conta, /Supabase Auth MFA/);
-    assert.doesNotMatch(conta, /dashboard fiscal|Stripe|faturamento/i);
+  it('UI documenta o caminho TOTP em /app /entrar /cadastro', async () => {
+    const app = await (await fetch(`${base}/app`)).text();
+    assert.match(app, /2FA \(TOTP\)/);
+    assert.match(app, /Supabase Auth MFA/);
+    assert.doesNotMatch(app, /dashboard fiscal|Stripe|faturamento/i);
+    const alias = await fetch(`${base}/conta`);
+    assert.equal(alias.status, 200);
     const entrar = await (await fetch(`${base}/entrar`)).text();
     assert.match(entrar, /2FA \(TOTP\)/);
     const cadastro = await (await fetch(`${base}/cadastro`)).text();

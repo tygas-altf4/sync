@@ -23,19 +23,22 @@ mountCaptcha(
   config,
 );
 
-if (params.get('lead_id')) {
+const leadId = sessionStorage.getItem('sync_lead_id') || params.get('lead_id');
+const emailPrefill = sessionStorage.getItem('sync_lead_email') || params.get('email');
+const nomePrefill = sessionStorage.getItem('sync_lead_nome') || params.get('nome');
+if (leadId) {
   const leadField = document.getElementById('lead_id');
-  if (leadField) leadField.value = params.get('lead_id');
+  if (leadField) leadField.value = leadId;
 }
-if (params.get('email')) {
+if (emailPrefill) {
   const signupEmail = document.getElementById('signup_email');
   const loginEmail = document.getElementById('login_email');
-  if (signupEmail) signupEmail.value = params.get('email');
-  if (loginEmail) loginEmail.value = params.get('email');
+  if (signupEmail) signupEmail.value = emailPrefill;
+  if (loginEmail) loginEmail.value = emailPrefill;
 }
-if (params.get('nome')) {
+if (nomePrefill) {
   const nome = document.getElementById('signup_nome');
-  if (nome) nome.value = params.get('nome');
+  if (nome) nome.value = nomePrefill;
 }
 
 async function postAuth(path, form) {
@@ -70,10 +73,9 @@ signupForm?.addEventListener('submit', async (event) => {
       setStatus(result.error ?? 'Não deu pra criar a conta.', 'err');
       return;
     }
-    const next = new URL('/conta', window.location.origin);
-    const leadId = document.getElementById('lead_id')?.value;
-    if (leadId) next.searchParams.set('lead_id', leadId);
-    window.location.href = next.href;
+    const signedLead = document.getElementById('lead_id')?.value;
+    if (signedLead) sessionStorage.setItem('sync_lead_id', signedLead);
+    window.location.href = '/app';
   } catch {
     setStatus('Não deu pra criar a conta agora.', 'err');
   }
@@ -88,7 +90,7 @@ loginForm?.addEventListener('submit', async (event) => {
       setStatus(result.error ?? 'Não deu pra entrar.', 'err');
       return;
     }
-    window.location.href = '/conta';
+    window.location.href = '/app';
   } catch {
     setStatus('Não deu pra entrar agora.', 'err');
   }

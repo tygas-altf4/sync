@@ -27,12 +27,14 @@ Landing de captura em `web/` + `src/vitrine/` — **dono Vitrine**, draft neste 
 | | |
 |---|---|
 | Host canônico / CTAs / og:url | `https://sync.plvria.com.br` |
+| Rotas | `/` landing · `/planos` · `/entrar` · `/cadastro` · `/app` (área logada; alias `/conta`) |
+| Contato | `mailto:plvria@plvria.com.br` (footer) |
 | Público | empresa (ME/Simples/serviço) e contador — **não escolas**, sem cross-sell escolar |
 | CTA primário | Começar grátis |
 | Planos pagos | Falar com upgrade (handoff; **sem cobrança** nesta UI) |
-| Form → | captcha → `leads` (`origem=hotsite`, `stage=novo`, `lgpd_at`) |
+| Form → | captcha + rate limit → `insertLead` (#5, service role) · `origem=hotsite`, `stage=novo`, `lgpd_at` |
 | Auth → | `/entrar` `/cadastro` — signup/login (Supabase Auth ou stub). Cookie httpOnly. Captcha + rate limit |
-| 2FA / MFA → | TOTP (Supabase Auth MFA) **depois** do e-mail confirmado, em `/conta`. Login com 2FA ativo pede o código (aal2). Stub gera segredo TOTP real |
+| 2FA / MFA → | TOTP (Supabase Auth MFA) **depois** do e-mail confirmado, em `/app`. Login com 2FA ativo pede o código (aal2). Stub gera segredo TOTP real |
 | Onboarding → | só com e-mail **confirmado** → `accounts` free50 + `quota_usage` + lead `teste` |
 | Upgrade stub → | `crm_events` `upgrade_handoff` (payload do mapa Vitrine↔Supabase) |
 
@@ -51,13 +53,14 @@ npm run web
 | `SUPABASE_SECRET_KEY` | **só servidor** | alias da service role / `sb_secret_` |
 | `TURNSTILE_SITE_KEY` | público | widget Cloudflare Turnstile |
 | `TURNSTILE_SECRET_KEY` | **só servidor** | siteverify; se faltar, captcha **stuba** |
+| `UPSTASH_REDIS_REST_URL` / `_TOKEN` | **só servidor** | rate limit; sem env = memória (ainda enforce) |
 | `PORT` | server | padrão 3000 |
 
 Sem URL/service role, as rotas **stubam**. Sem chaves Turnstile, o captcha é checkbox de rascunho. Auth sem anon key usa usuários em memória (e-mail começa **não** confirmado).
 
 `GET /api/public-config` devolve só URL + anon + site key. Service role e secret do Turnstile **não** saem do processo Node.
 
-**Caminho 2FA (day-1):** cadastro/login (captcha + rate limit) → confirmar e-mail → `/conta` oferece TOTP (`POST /api/auth/mfa/enroll` + `verify`). App autenticador escaneia o QR (live) ou cola o segredo (stub). Com 2FA já ativo, o login aal1 cai em `/conta` até o código. Rate limit também no MFA. Draft: a cota Free50 **não** bloqueia sem MFA; **antes de publicar**, MFA é obrigatório para quem emite NFS-e (ADR-001 §3). Sem UI de billing nem dashboard fiscal/financeiro (Dinheiro Bot).
+**Caminho 2FA (day-1):** cadastro/login (captcha + rate limit) → confirmar e-mail → `/app` oferece TOTP (`POST /api/auth/mfa/enroll` + `verify`). App autenticador escaneia o QR (live) ou cola o segredo (stub). Com 2FA já ativo, o login aal1 cai em `/app` até o código. Rate limit também no MFA. Draft: a cota Free50 **não** bloqueia sem MFA; **antes de publicar**, MFA é obrigatório para quem emite NFS-e (ADR-001 §3). Sem UI de billing nem dashboard fiscal/financeiro (Dinheiro Bot).
 
 RLS esperado: `docs/rls-leads.md` — anon não select/insert `leads`.
 

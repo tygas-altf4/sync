@@ -43,8 +43,12 @@ describe('landing copy', () => {
     assert.equal(landing.includes('pixel'), false);
     assert.equal(landing.includes('checkout'), false);
     assert.match(landing, /https:\/\/sync\.plvria\.com\.br/);
+    assert.match(landing, /rel="canonical"/);
+    assert.match(landing, /property="og:url"/);
     assert.match(landing, /mailto:plvria@plvria\.com\.br/);
     assert.match(landing, /id="contato"/);
+    assert.match(landing, /href="\/planos"/);
+    assert.equal(landing.includes('http://'), false);
   });
 });
 
@@ -220,7 +224,7 @@ describe('HTTP vitrine', () => {
     });
   });
 
-  it('GET / devolve a landing', async () => {
+  it('GET / devolve a landing e as rotas curtas', async () => {
     const res = await fetch(`${base}/`);
     const html = await res.text();
     assert.equal(res.status, 200);
@@ -232,8 +236,15 @@ describe('HTTP vitrine', () => {
     const cadastroHtml = await cadastro.text();
     assert.match(cadastroHtml, /Criar conta SyncNFe/);
     assert.match(cadastroHtml, /2FA \(TOTP\)/);
+    assert.match(cadastroHtml, /og:url" content="https:\/\/sync\.plvria\.com\.br\/cadastro"/);
     const entrar = await fetch(`${base}/entrar`);
     assert.equal(entrar.status, 200);
+    const planos = await fetch(`${base}/planos`);
+    assert.equal(planos.status, 200);
+    assert.match(await planos.text(), /id="planos"/);
+    const app = await fetch(`${base}/app`);
+    assert.equal(app.status, 200);
+    assert.match(await app.text(), /rel="canonical" href="https:\/\/sync\.plvria\.com\.br\/app"/);
   });
 
   it('POST /api/leads valida e stubba sem service role', async () => {

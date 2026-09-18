@@ -11,6 +11,10 @@ const signupBtn = document.getElementById('btn-signup');
 const publicConfig = await loadPublicConfig();
 mountCaptcha(document.getElementById('lead-captcha'), document.getElementById('turnstile_token'), publicConfig);
 
+if (window.location.pathname === '/planos') {
+  document.getElementById('planos')?.scrollIntoView({ block: 'start' });
+}
+
 const params = new URLSearchParams(window.location.search);
 for (const key of ['utm_source', 'utm_medium', 'utm_campaign']) {
   const field = document.getElementById(key);
@@ -95,15 +99,13 @@ form?.addEventListener('submit', async (event) => {
       return;
     }
     sessionStorage.setItem('sync_lead_id', result.lead_id);
-    setStatus(result.message, 'ok');
-    postLead.hidden = false;
     const email = form.querySelector('#email')?.value ?? '';
     const nome = form.querySelector('#nome')?.value ?? '';
-    const next = new URL('/cadastro', window.location.origin);
-    next.searchParams.set('lead_id', result.lead_id);
-    if (email) next.searchParams.set('email', email);
-    if (nome) next.searchParams.set('nome', nome);
-    if (signupBtn) signupBtn.href = `${next.pathname}${next.search}`;
+    if (email) sessionStorage.setItem('sync_lead_email', email);
+    if (nome) sessionStorage.setItem('sync_lead_nome', nome);
+    setStatus(result.message, 'ok');
+    postLead.hidden = false;
+    if (signupBtn) signupBtn.href = '/cadastro';
   } catch {
     setStatus('Não deu pra salvar agora. Tenta de novo em instantes.', 'err');
   }

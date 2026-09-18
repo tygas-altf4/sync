@@ -132,7 +132,8 @@ challengeForm?.addEventListener('submit', async (event) => {
 });
 
 provisionBtn?.addEventListener('click', async () => {
-  const leadId = params.get('lead_id') || state.user?.lead_id;
+  const leadId =
+    sessionStorage.getItem('sync_lead_id') || params.get('lead_id') || state.user?.lead_id;
   setStatus('Liberando cota free…', '');
   const response = await fetch('/api/signup', {
     method: 'POST',
