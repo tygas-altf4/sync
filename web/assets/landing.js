@@ -154,3 +154,12 @@ for (const link of document.querySelectorAll('[data-plan="free50"]')) {
     planInterest.value = '';
   });
 }
+
+for (const link of document.querySelectorAll('[data-perfil]')) {
+  link.addEventListener('click', () => {
+    // Prefill do select sem query string (teste da landing recusa href com ?).
+    const perfil = document.getElementById('perfil');
+    const value = link.getAttribute('data-perfil');
+    if (perfil && value) perfil.value = value;
+  });
+}

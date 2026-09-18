@@ -39,7 +39,7 @@ describe('worker preview (boot)', () => {
     assert.equal(res.status, 200);
     assert.match(res.headers.get('content-type') ?? '', /text\/html/);
     const html = await res.text();
-    assert.match(html, /Emita NFS-e Nacional sem travar no meio do caminho/);
+    assert.match(html, /Emita NFS-e Nacional e municipal sem burocracia/);
     assert.match(html, /color-scheme" content="light only"/);
   });
 

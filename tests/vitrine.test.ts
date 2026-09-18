@@ -28,13 +28,20 @@ const baseLead = {
 
 describe('landing copy', () => {
   it('tem as 5 seções e CTAs do brief, sem escola/ads/checkout', () => {
-    assert.match(landing, /Emita NFS-e Nacional sem travar no meio do caminho/);
-    assert.match(landing, /id="dor"/);
-    assert.match(landing, /Por que agora/);
+    assert.match(landing, /Emita NFS-e Nacional e municipal sem burocracia/);
+    assert.match(landing, /id="reforma"/);
+    assert.match(landing, /Pronto pra NFS-e Nacional \+ Reforma 2026/);
     assert.match(landing, /id="como-funciona"/);
+    assert.match(landing, /Cadastrar/);
+    assert.match(landing, /Emitir \/ enviar/);
     assert.match(landing, /id="planos"/);
     assert.match(landing, /id="comecar"/);
     assert.match(landing, /id="faq"/);
+    assert.match(landing, /id="contador"/);
+    assert.match(landing, /Começar como contador/);
+    assert.match(landing, /Certificado A1/);
+    assert.match(landing, /Segurança/);
+    assert.match(landing, /sem cartão/);
     assert.match(landing, /Começar grátis/);
     assert.match(landing, /Falar com upgrade/);
     assert.match(landing, /free50/);
