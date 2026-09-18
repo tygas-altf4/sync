@@ -1,38 +1,30 @@
-# RLS — `leads` (expectativa day-1)
+# RLS — `leads`
 
-**Draft.** Aplicar no projeto Supabase compartilhado. Este repo não publica política sozinho.
+SQL + RLS **já estão no projeto** (`leads`, `accounts`, `establishments`, `subscriptions`, `quota_usage`, `nfse_docs`, `crm_events`; buckets `nfse-xml` e `certificates` privados). Este hotsite **não** grava pelo browser.
 
-## Regra
+## Caminho do form (server-only)
+
+`POST /api/leads` → rate limit → captcha (Turnstile) → `insertLead(createSupabaseClient())` (#5).
+
+Colunas gravadas: `nome`, `email`, `cnpj` / `cnpj_pendente`, `volume_mensal` (`ate_50`|`51_200`|`201_500`|`500_mais`|`nao_sei`), `perfil` (`empresa`|`contador`|`outro`), `lgpd_at`, `origem=hotsite`, UTMs, `stage=novo`, `account_id=null`.
+
+Env **só no servidor** (nunca commit, nunca bundle):
+
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY` (JWT `service_role` **ou** `sb_secret_…`; alias `SUPABASE_SECRET_KEY`)
+
+Sem essas duas, o insert **stuba** em memória. O browser só vê `SUPABASE_ANON_KEY` + `TURNSTILE_SITE_KEY` via `/api/public-config`.
+
+## Regra RLS
 
 | Papel | `leads` SELECT | `leads` INSERT/UPDATE/DELETE |
 |---|---|---|
 | `anon` | **não** | **não** |
-| `authenticated` | não lista a tabela de leads de terceiros | não |
-| `service_role` | sim (só servidor / Edge Function) | sim, **depois** do captcha |
+| `authenticated` | não lista leads de terceiros | não |
+| `service_role` | sim (só servidor) | sim, **depois** do captcha |
 
-O browser **nunca** recebe `SUPABASE_SERVICE_ROLE_KEY`. No cliente só entram:
+Signup Auth: anon key no servidor (`/api/auth/*`). E-mail confirmado antes de `accounts` + `quota_usage`. MFA TOTP em `/app` depois do e-mail.
 
-- `SUPABASE_URL`
-- `SUPABASE_ANON_KEY`
-- `TURNSTILE_SITE_KEY`
+Policy `leads_owner_select` só libera SELECT depois de `account_id` + owner. **Não há policy de INSERT para anon.** Se existir policy antiga `anon insert leads`, **remover**.
 
-Signup Auth: anon key no servidor (`/api/auth/*`). Confirmação de e-mail obrigatória antes de `accounts` + `quota_usage`. MFA TOTP (Supabase Auth) é o passo seguinte em `/app` — enroll só com e-mail confirmado; verify com rate limit.
-
-O SQL em `supabase/migrations/001_schema_minimo.sql` já liga RLS. Policy `leads_owner_select` só libera SELECT depois de `account_id` + owner. **Não há policy de INSERT para anon** — o form passa por `createSupabaseClient` (service role) depois do captcha.
-
-Insert do hotsite: `POST /api/leads` → Turnstile → `insertLead(createSupabaseClient())`. Sem cliente REST paralelo.
-
-## SQL mínimo esperado
-
-```sql
-alter table public.leads enable row level security;
-
--- sem policy de SELECT/INSERT para anon ou authenticated
--- (ausência de policy = deny no Postgres RLS)
-
--- service_role ignora RLS no Supabase; é o único caminho de escrita do hotsite.
-```
-
-Se existir policy antiga `anon insert leads`, **remover**. Captcha no cliente sem RLS não basta.
-
-`crm_events` e `accounts`: mesma ideia — anon não select. Escritas pelo server path.
+`crm_events` e `accounts`: anon não select. Escritas pelo server path.

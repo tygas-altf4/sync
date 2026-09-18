@@ -43,20 +43,20 @@ npm run web
 # http://127.0.0.1:3000
 ```
 
-**Env (não commitar segredos):**
+**Env (não commitar segredos).** SQL+RLS já está no projeto. O form grava em `leads` **só** com estas vars **no processo Node**:
 
 | Var | Onde | Uso |
 |---|---|---|
-| `SUPABASE_URL` | server + público via `/api/public-config` | projeto |
-| `SUPABASE_ANON_KEY` | server + público via `/api/public-config` | Auth (nunca select `leads`) |
-| `SUPABASE_SERVICE_ROLE_KEY` | **só servidor** | `createSupabaseClient` — leads/accounts/crm depois do captcha |
+| `SUPABASE_URL` | server (+ URL pública via `/api/public-config`) | projeto |
+| `SUPABASE_ANON_KEY` | server + público via `/api/public-config` | Auth (nunca select/insert `leads`) |
+| `SUPABASE_SERVICE_ROLE_KEY` | **só servidor** | `createSupabaseClient` → `insertLead` depois de captcha + rate limit |
 | `SUPABASE_SECRET_KEY` | **só servidor** | alias da service role / `sb_secret_` |
 | `TURNSTILE_SITE_KEY` | público | widget Cloudflare Turnstile |
 | `TURNSTILE_SECRET_KEY` | **só servidor** | siteverify; se faltar, captcha **stuba** |
 | `UPSTASH_REDIS_REST_URL` / `_TOKEN` | **só servidor** | rate limit; sem env = memória (ainda enforce) |
 | `PORT` | server | padrão 3000 |
 
-Sem URL/service role, as rotas **stubam**. Sem chaves Turnstile, o captcha é checkbox de rascunho. Auth sem anon key usa usuários em memória (e-mail começa **não** confirmado).
+Sem `SUPABASE_URL` + service role, `POST /api/leads` **stuba** (não toca o banco). Sem Turnstile, o captcha é checkbox de rascunho. Auth sem anon key usa usuários em memória (e-mail começa **não** confirmado).
 
 `GET /api/public-config` devolve só URL + anon + site key. Service role e secret do Turnstile **não** saem do processo Node.
 
