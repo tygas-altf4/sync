@@ -14,7 +14,7 @@ Este repositório é o **scaffold** do cliente SEFIN. **Não emite NFS-e real ai
 
 ## Arquitetura
 
-Decisões não negociáveis: [ADR-001 — Arquitetura NFS-e](docs/ADR-001-arquitetura-nfse.md).
+Decisões não negociáveis (schema, SEFIN, cota, A1, wire, fronteira de auth): [ADR-001 — Arquitetura NFS-e](docs/ADR-001-arquitetura-nfse.md).
 
 ---
 

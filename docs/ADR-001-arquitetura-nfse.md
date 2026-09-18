@@ -33,7 +33,7 @@ Tabelas/contrato do núcleo:
 | Storage `nfse-xml` | XML DPS/NFS-e (privado); path em `nfse_docs.xml_storage_path` |
 | Storage `certificates` | PFX criptografado; **service-role only** |
 
-Worker SEFIN usa **service role**. RLS de usuário fica na app. Não criar REST/GraphQL/fila própria para o mesmo estado fiscal.
+Worker SEFIN (Nota Bot) usa **service role** só no servidor — ver §3. RLS no schema. Não criar REST/GraphQL/fila própria para o mesmo estado fiscal.
 
 Canal `nacional` agora. `campinas` / `sao_paulo` = conectores depois, mesmo `establishments.channel`.
 
@@ -92,7 +92,21 @@ Sem token/API key. Auth = mTLS A1.
 
 P0 relativo à base: `POST /nfse`, `GET /nfse/{chaveAcesso}`, `GET|HEAD /dps/{id}`, `POST /nfse/{chaveAcesso}/eventos` (cancel `101101`). Substituição = nova DPS no `POST /nfse` (sistema gera `105102`); não inventar POST de substituição.
 
-## 3. Rejeição e retry
+## 3. Fronteira de auth / segurança
+
+| Superfície | Quem | Regra |
+|---|---|---|
+| Login / sessão | **Vitrine** → Supabase Auth | Área autenticada = sessão Supabase. Sem auth paralela neste repo |
+| E-mail | Supabase Auth | Verificação de e-mail **obrigatória** antes de uso operacional (emitir, cert, cota, worker) |
+| Captcha (signup / form público) | **Vitrine** (UX) | **Obrigatório** neste ADR: Turnstile ou hCaptcha. Sync não implementa o widget; recusa fluxo sem captcha no signup |
+| RLS | Schema Supabase | Policies em `establishments`, `quota_usage`, `nfse_docs`, `accounts` + buckets. Browser só com JWT do usuário |
+| Service role | **Nota Bot** (server/worker) | Somente após contexto de conta autenticada estar estabelecido. **Nunca** no browser, `.env` de front, bundle ou `NEXT_PUBLIC_*` |
+| Certificado A1 | Worker | Só `certificate_vault_ref` + Storage `certificates` privado (service-role). **Nunca** no front (upload direto, download, PEM/PFX em JS) |
+| Segredos | Server | Sem API keys, service role, senha PFX, `SUPABASE_SERVICE_ROLE_KEY` no frontend |
+
+Fronteira: Vitrine ownership de auth user-facing + captcha. Sync/Nota worker não autentica o humano — recebe `account_id` já autenticado e verificado e aí usa service role no fio SEFIN / Storage. Cliente browser = anon/publishable key + JWT; qualquer outra chave é bug.
+
+## 4. Rejeição e retry
 
 Fluxo pós-`POST /nfse`:
 
@@ -106,11 +120,12 @@ Reconciliação obrigatória após POST incerto: `HEAD /dps/{id}` (existe?) e/ou
 
 Id DPS (45): IBGE(7) + tpInscr(1) + IEFed(14) + série(5) + nDPS(15).
 
-## 4. Fora de escopo (explícito)
+## 5. Fora de escopo (explícito)
 
 | Item | Onde vive / por quê |
 |---|---|
 | Hotsite, CRM, leads, `crm_events` | **Vitrine** — não neste repo |
+| Login, verificação de e-mail, widget captcha | **Vitrine** (Supabase Auth + Turnstile/hCaptcha). Sync não autentica o humano |
 | Billing, Stripe/Asaas, `price_brl`, ownership de plano comercial | **Dinheiro** — Sync só lê `plan_code` / snapshot de cota |
 | ABRASF municipal legado (“puro”) | Fora. Conectores `campinas` / `sao_paulo` são depois, mesmo schema |
 | Reinventar protocolo SEFIN / XSD / XMLDSig | Wrapper MIT (open-nfse) ou extração pontual |
@@ -121,7 +136,7 @@ Id DPS (45): IBGE(7) + tpInscr(1) + IEFed(14) + série(5) + nDPS(15).
 | IBS/CBS (`IBSCBS` / RTC) como regra bloqueante | DTO extensível; não bloquear P0 |
 | UI emissor, marketing de planos | Fora |
 
-## 5. Consequências e próximos spikes
+## 6. Consequências e próximos spikes
 
 **Consequências**
 
@@ -129,6 +144,7 @@ Id DPS (45): IBGE(7) + tpInscr(1) + IEFed(14) + série(5) + nDPS(15).
 - Sem segundo contrato de dados. Qualquer tela/API Sync lê as mesmas tabelas.
 - Troca de ambiente errada em produção emite NFS-e real — o default **é** `ProducaoRestrita`.
 - Timeout sem `GET|HEAD /dps/{id}` pode duplicar autorização.
+- Service role ou PFX no browser é violação deste ADR; emissão operacional sem e-mail verificado idem.
 
 **Spikes seguintes (sem alargar este ADR)**
 
