@@ -1,4 +1,8 @@
 import type { Ambiente, NfseEnvironment } from '../types.js';
+import {
+  readSupabaseSecretKey,
+  readSupabaseUrl,
+} from '../persistencia/supabaseClient.js';
 
 /**
  * Bases SEFIN (do plano técnico SyncNFe.NFSeNacional).
@@ -73,7 +77,7 @@ export function loadConfig(
     publicHost: env['SYNCNFE_PUBLIC_HOST'] ?? DEFAULT_PUBLIC_HOST,
     sefinBaseUrl: SEFIN_BASE_URL[ambiente],
     sefinSwaggerUrl: SEFIN_SWAGGER_URL[ambiente],
-    supabaseUrl: env['SUPABASE_URL'],
-    supabaseServiceRoleKey: env['SUPABASE_SERVICE_ROLE_KEY'],
+    supabaseUrl: readSupabaseUrl(env),
+    supabaseServiceRoleKey: readSupabaseSecretKey(env),
   };
 }
