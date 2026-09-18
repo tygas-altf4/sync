@@ -1,5 +1,5 @@
 ---
-description: Segurança day-1 — RLS, secrets, vault A1, service role só no servidor
+description: Segurança day-1 — RLS, MFA, secrets, vault A1, service role só no servidor
 alwaysApply: true
 ---
 
@@ -8,6 +8,7 @@ alwaysApply: true
 Lei: `docs/ADR-001-arquitetura-nfse.md` §3.
 
 - Auth = Supabase Auth (Vitrine). Sem auth paralela. E-mail verificado antes de emitir / cert / cota / worker.
+- MFA / 2FA (Supabase Auth MFA): recomendado day-1; **obrigatório antes de publicar** para titulares que emitem NFS-e. UX = Vitrine. Nota assume sessão autenticada + verificada. MFA não é SEFIN.
 - Captcha (Turnstile ou hCaptcha) no signup e form público — Vitrine; recusar fluxo sem captcha.
 - RLS em `accounts`, `establishments`, `quota_usage`, `nfse_docs`, `subscriptions` + buckets. Browser = JWT + anon/publishable key.
 - `SUPABASE_SERVICE_ROLE_KEY` **somente servidor** (Nota worker). Nunca client, `.env` de front, bundle, `NEXT_PUBLIC_*`.

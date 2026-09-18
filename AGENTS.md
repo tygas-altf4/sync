@@ -21,15 +21,16 @@ Tabelas do núcleo: `establishments`, `quota_usage`, `nfse_docs`, `accounts` (le
 | Superfície | Dono | Neste repo? |
 |---|---|---|
 | SEFIN, quota, `establishments`, `nfse_docs`, vault A1 | **Nota** | sim |
-| Landing, leads, CRM, auth UI, widget captcha | **Vitrine** | não |
+| Landing, leads, CRM, auth UI, captcha, MFA UX | **Vitrine** | não |
 | Billing, Stripe/Asaas, `subscriptions`, `price_brl` | **Dinheiro** | não — Sync só lê `plan_code` / snapshot de cota |
 
-Publicar 1ª fatia **sem Dinheiro** é ok. Sem Vitrine (auth / e-mail / captcha / form) ou sem rate limit **não**.
+Publicar 1ª fatia **sem Dinheiro** é ok. Sem Vitrine (auth / e-mail / captcha / MFA / form) ou sem rate limit **não**.
 
 ## Segurança (day-1)
 
 - Auth = Supabase Auth (Vitrine). Sem auth paralela neste repo.
 - E-mail **verificado** antes de emitir, cert, cota ou worker.
+- **MFA / 2FA** (Supabase Auth MFA): recomendado day-1; **obrigatório antes de publicar** para titulares que emitem NFS-e. UX = Vitrine. Nota assume sessão/conta autenticada + verificada (e-mail + MFA). MFA **não** é trabalho do SEFIN.
 - Captcha (Turnstile ou hCaptcha) no signup e form público — Vitrine implementa; recusar fluxo sem captcha.
 - RLS em `accounts`, `establishments`, `quota_usage`, `nfse_docs`, `subscriptions` + buckets. Browser = JWT do usuário + anon/publishable key.
 - Service role **só servidor** (Nota worker). Nunca browser, `.env` de front, bundle ou `NEXT_PUBLIC_*`.
@@ -57,7 +58,7 @@ Cota mensal (`quota_usage`) ≠ rate limit. Cota = teto de notas. Rate limit = a
 - API / contrato de dados paralelo ao schema Supabase.
 - Inventar protocolo SEFIN / XSD / XMLDSig; dependência AGPL.
 - Produto, copy, DNS ou deploy escolar.
-- Publicar sem auth + e-mail verify + captcha + RLS + vault + rate limits.
+- Publicar sem auth + e-mail verify + MFA (emissores) + captcha + RLS + vault + rate limits.
 - Publicar sem Dinheiro (billing) **é permitido**.
 
 ## Skills futuras
