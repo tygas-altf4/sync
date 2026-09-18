@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cadastro — Plvria Sync</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="canonical" href="https://sync.plvria.com.br/cadastro" />
+    <meta property="og:url" content="https://sync.plvria.com.br/cadastro" />
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/assets/landing.css" />
+  </head>
+  <body>
+    <div class="draft-banner">
+      Rascunho — cadastro com Auth + e-mail + captcha + 2FA depois. Sem publish.
+    </div>
+    <header class="site-header">
+      <div class="wrap">
+        <a class="brand" href="/">
+          <span class="brand-mark">Plvria Sync</span>
+          <span class="brand-sub">SyncNFe</span>
+        </a>
+        <nav class="nav">
+          <a href="/entrar">Entrar</a>
+          <a class="btn" href="/#comecar">Começar grátis</a>
+        </nav>
+      </div>
+    </header>
+    <main class="auth-page wrap">
+      <p class="eyebrow">Cadastro</p>
+      <h1>Criar conta SyncNFe</h1>
+      <p class="lede">
+        Área de cadastro (não é só o form de lead). Confirme o e-mail e ative o 2FA
+        (TOTP) em /app. Sem cartão e sem cobrança nesta página.
+      </p>
+      <form id="signup-form" class="auth-card auth-card-wide">
+        <h2>Seus dados</h2>
+        <input type="hidden" name="turnstile_token" id="signup_turnstile" />
+        <input type="hidden" name="lead_id" id="lead_id" />
+        <div class="field">
+          <label for="signup_nome">Nome</label>
+          <input id="signup_nome" name="nome" type="text" autocomplete="name" required />
+        </div>
+        <div class="field">
+          <label for="signup_email">E-mail</label>
+          <input id="signup_email" name="email" type="email" autocomplete="email" required />
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="signup_password">Senha</label>
+            <input
+              id="signup_password"
+              name="password"
+              type="password"
+              autocomplete="new-password"
+              minlength="8"
+              required
+            />
+          </div>
+          <div class="field">
+            <label for="signup_password_confirm">Confirmar senha</label>
+            <input
+              id="signup_password_confirm"
+              name="password_confirm"
+              type="password"
+              autocomplete="new-password"
+              minlength="8"
+              required
+            />
+          </div>
+        </div>
+        <div id="signup-captcha" class="captcha-slot"></div>
+        <button class="btn btn-forest" type="submit">Criar conta</button>
+        <p class="micro">Já tem conta? <a href="/entrar">Entrar</a>. 2FA (TOTP) é o passo depois do e-mail.</p>
+      </form>
+      <p class="form-status" id="auth-status" role="status" aria-live="polite"></p>
+    </main>
+    <script src="/assets/auth.js" type="module"></script>
+  </body>
+</html>

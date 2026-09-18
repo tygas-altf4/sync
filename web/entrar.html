@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Entrar — Plvria Sync</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="canonical" href="https://sync.plvria.com.br/entrar" />
+    <meta property="og:url" content="https://sync.plvria.com.br/entrar" />
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/assets/landing.css" />
+  </head>
+  <body>
+    <div class="draft-banner">
+      Rascunho — Auth Supabase + e-mail + 2FA (TOTP). Sem publish.
+    </div>
+    <header class="site-header">
+      <div class="wrap">
+        <a class="brand" href="/">
+          <span class="brand-mark">Plvria Sync</span>
+          <span class="brand-sub">SyncNFe</span>
+        </a>
+        <nav class="nav">
+          <a href="/#comecar">Começar grátis</a>
+          <a class="btn" href="/app">Minha conta</a>
+        </nav>
+      </div>
+    </header>
+    <main class="auth-page wrap">
+      <p class="eyebrow">Supabase Auth</p>
+      <h1>Crie a conta ou entre</h1>
+      <p class="lede">
+        A cota free só libera depois do e-mail confirmado. Depois disso oferecemos
+        2FA (TOTP) na área da conta. Sem cartão. Sem cobrança nesta página.
+      </p>
+      <div class="auth-grid">
+        <form id="signup-form" class="auth-card">
+          <h2>Criar conta</h2>
+          <input type="hidden" name="turnstile_token" id="signup_turnstile" />
+          <input type="hidden" name="lead_id" id="lead_id" />
+          <div class="field">
+            <label for="signup_nome">Nome</label>
+            <input id="signup_nome" name="nome" type="text" autocomplete="name" required />
+          </div>
+          <div class="field">
+            <label for="signup_email">E-mail</label>
+            <input id="signup_email" name="email" type="email" autocomplete="email" required />
+          </div>
+          <div class="field">
+            <label for="signup_password">Senha</label>
+            <input
+              id="signup_password"
+              name="password"
+              type="password"
+              autocomplete="new-password"
+              minlength="8"
+              required
+            />
+          </div>
+          <div id="signup-captcha" class="captcha-slot"></div>
+          <button class="btn btn-forest" type="submit">Criar conta</button>
+          <p class="micro">Vamos pedir confirmação de e-mail antes do onboarding.</p>
+        </form>
+        <form id="login-form" class="auth-card">
+          <h2>Já tenho conta</h2>
+          <input type="hidden" name="turnstile_token" id="login_turnstile" />
+          <div class="field">
+            <label for="login_email">E-mail</label>
+            <input id="login_email" name="email" type="email" autocomplete="username" required />
+          </div>
+          <div class="field">
+            <label for="login_password">Senha</label>
+            <input
+              id="login_password"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              required
+            />
+          </div>
+          <div id="login-captcha" class="captcha-slot"></div>
+          <button class="btn-ghost" type="submit">Entrar</button>
+          <p class="micro">Se o 2FA estiver ativo, o código do autenticador vem em seguida em /app.</p>
+        </form>
+      </div>
+      <p class="form-status" id="auth-status" role="status" aria-live="polite"></p>
+    </main>
+    <script src="/assets/auth.js" type="module"></script>
+  </body>
+</html>

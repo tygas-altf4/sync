@@ -86,6 +86,88 @@ export type NfseDocInsert = {
 
 export type NfseDocUpdate = Partial<NfseDocInsert>;
 
+export type LeadRow = {
+  id: string;
+  created_at: string;
+  nome: string;
+  email: string;
+  cnpj: string | null;
+  cnpj_pendente: boolean;
+  volume_mensal: string;
+  perfil: string;
+  lgpd_at: string;
+  origem: string;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  stage: string;
+  account_id: string | null;
+  notes: string | null;
+};
+
+export type LeadInsert = {
+  id?: string;
+  created_at?: string;
+  nome: string;
+  email: string;
+  cnpj?: string | null;
+  cnpj_pendente?: boolean;
+  volume_mensal: string;
+  perfil: string;
+  lgpd_at: string;
+  origem?: string;
+  utm_source?: string | null;
+  utm_medium?: string | null;
+  utm_campaign?: string | null;
+  stage?: string;
+  account_id?: string | null;
+  notes?: string | null;
+};
+
+export type LeadUpdate = Partial<LeadInsert>;
+
+export type AccountRow = {
+  id: string;
+  created_at: string;
+  owner_user_id: string;
+  name: string;
+  plan_code: string;
+  plan_status: string;
+  lead_id: string | null;
+};
+
+export type AccountInsert = {
+  id?: string;
+  created_at?: string;
+  owner_user_id: string;
+  name: string;
+  plan_code?: string;
+  plan_status?: string;
+  lead_id?: string | null;
+};
+
+export type AccountUpdate = Partial<AccountInsert>;
+
+export type CrmEventRow = {
+  id: string;
+  lead_id: string | null;
+  account_id: string | null;
+  event_type: string;
+  payload: Record<string, unknown>;
+  created_at: string;
+};
+
+export type CrmEventInsert = {
+  id?: string;
+  lead_id?: string | null;
+  account_id?: string | null;
+  event_type: string;
+  payload?: Record<string, unknown>;
+  created_at?: string;
+};
+
+export type CrmEventUpdate = Partial<CrmEventInsert>;
+
 type TableDef<Row, Insert, Update> = {
   Row: Row;
   Insert: Insert;
@@ -94,7 +176,7 @@ type TableDef<Row, Insert, Update> = {
 };
 
 /**
- * Generic mínimo do cliente Supabase (tabelas do núcleo Nota).
+ * Generic mínimo do cliente Supabase (tabelas do núcleo Nota + Vitrine).
  * Sem Views/Functions — o worker não as usa neste wire.
  */
 export type Database = {
@@ -107,6 +189,9 @@ export type Database = {
         EstablishmentUpdate
       >;
       nfse_docs: TableDef<NfseDocRow, NfseDocInsert, NfseDocUpdate>;
+      leads: TableDef<LeadRow, LeadInsert, LeadUpdate>;
+      accounts: TableDef<AccountRow, AccountInsert, AccountUpdate>;
+      crm_events: TableDef<CrmEventRow, CrmEventInsert, CrmEventUpdate>;
     };
     Views: {
       [_ in never]: never;

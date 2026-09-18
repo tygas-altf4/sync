@@ -20,6 +20,56 @@ Agentes Cursor: [AGENTS.md](AGENTS.md).
 
 ---
 
+## Hotsite + CRM (Vitrine) — DRAFT
+
+Landing de captura em `web/` + `src/vitrine/` — **dono Vitrine**, draft neste repo. **Não é publicação.** Lei: [AGENTS.md](AGENTS.md) + [ADR-001](docs/ADR-001-arquitetura-nfse.md). Sem API fora de `001_schema_minimo.sql`.
+
+| | |
+|---|---|
+| Host canônico / CTAs / og:url | `https://sync.plvria.com.br` |
+| Rotas | `/` landing · `/planos` · `/entrar` · `/cadastro` · `/app` (área logada; alias `/conta`) |
+| Contato | `mailto:plvria@plvria.com.br` (footer) |
+| Público | empresa (ME/Simples/serviço) e contador — **não escolas**, sem cross-sell escolar |
+| CTA primário | Começar grátis |
+| Planos pagos | Falar com upgrade (handoff; **sem cobrança** nesta UI) |
+| Form → | captcha + rate limit → `insertLead` (#5, service role) · `origem=hotsite`, `stage=novo`, `lgpd_at` |
+| Auth → | `/entrar` `/cadastro` — signup/login (Supabase Auth ou stub). Cookie httpOnly. Captcha + rate limit |
+| 2FA / MFA → | TOTP (Supabase Auth MFA) **depois** do e-mail confirmado, em `/app`. Login com 2FA ativo pede o código (aal2). Stub gera segredo TOTP real |
+| Onboarding → | só com e-mail **confirmado** → `accounts` free50 + `quota_usage` + lead `teste` |
+| Upgrade stub → | `crm_events` `upgrade_handoff` (payload do mapa Vitrine↔Supabase) |
+
+```bash
+npm run web
+# http://127.0.0.1:3000
+```
+
+**Env (não commitar segredos).** SQL+RLS já está no projeto. O form grava em `leads` **só** com estas vars **no processo Node**:
+
+| Var | Onde | Uso |
+|---|---|---|
+| `SUPABASE_URL` | server (+ URL pública via `/api/public-config`) | projeto |
+| `SUPABASE_ANON_KEY` | server + público via `/api/public-config` | Auth (nunca select/insert `leads`) |
+| `SUPABASE_SERVICE_ROLE_KEY` | **só servidor** | `createSupabaseClient` → `insertLead` depois de captcha + rate limit |
+| `SUPABASE_SECRET_KEY` | **só servidor** | alias da service role / `sb_secret_` |
+| `TURNSTILE_SITE_KEY` | público | widget Cloudflare Turnstile |
+| `TURNSTILE_SECRET_KEY` | **só servidor** | siteverify; se faltar, captcha **stuba** |
+| `UPSTASH_REDIS_REST_URL` / `_TOKEN` | **só servidor** | rate limit; sem env = memória (ainda enforce) |
+| `PORT` | server | padrão 3000 |
+
+Sem `SUPABASE_URL` + service role, `POST /api/leads` **stuba** (não toca o banco). Sem Turnstile, o captcha é checkbox de rascunho. Auth sem anon key usa usuários em memória (e-mail começa **não** confirmado).
+
+`GET /api/public-config` devolve só URL + anon + site key. Service role e secret do Turnstile **não** saem do processo Node.
+
+**Caminho 2FA (day-1):** cadastro/login (captcha + rate limit) → confirmar e-mail → `/app` oferece TOTP (`POST /api/auth/mfa/enroll` + `verify`). App autenticador escaneia o QR (live) ou cola o segredo (stub). Com 2FA já ativo, o login aal1 cai em `/app` até o código. Rate limit também no MFA. Draft: a cota Free50 **não** bloqueia sem MFA; **antes de publicar**, MFA é obrigatório para quem emite NFS-e (ADR-001 §3). Sem UI de billing nem dashboard fiscal/financeiro (Dinheiro Bot).
+
+RLS esperado: `docs/rls-leads.md` — anon não select/insert `leads`.
+
+Não inventar API fiscal paralela — SEFIN/DPS continua no núcleo (`src/sefin`, Nota Bot).
+
+**Publicar** o hotsite **somente** depois do ok do **Dinheiro Bot** e do **Thiago**. DNS/Cloudflare de `sync` fica fora deste PR.
+
+---
+
 ## Como rodar
 
 ```bash
@@ -27,6 +77,7 @@ npm install
 npm test
 npm run build
 npm run lint
+npm run web
 ```
 
 Copie `.env.example` para `.env` se for experimentar config local. Não commite `.env`, `*.pfx` nem `*.p12`.
@@ -78,9 +129,11 @@ src/
 ├── quota/            # Quota — bloqueia se notes_used >= notes_quota
 ├── persistencia/     # Cliente service-role + helpers (quota_usage / nfse_docs / establishments)
 ├── retry/            # RetryStore — 429 / 5xx / timeout + replay DPS
+├── vitrine/          # Hotsite DRAFT — leads / Auth / Turnstile / handoff (sem SEFIN)
 └── config/           # ProducaoRestrita | Producao + bases URL
+web/                  # Landing pt-BR + form (servido por `npm run web`)
 schemas/xsd/          # XSD oficiais (ainda não baixados)
-tests/                # node:test — Quota + persistência (fetch mock, sem rede)
+tests/                # node:test — Quota + persistência + vitrine (sem cert real, sem rede)
 ```
 
 ### Cotas (limite técnico)
@@ -100,7 +153,9 @@ Alinhado a `quota_usage.notes_quota` / `subscriptions.notes_quota`:
 
 Schema mínimo **aplicado** no projeto Supabase **sync plvria**. Fonte versionada: [`supabase/migrations/001_schema_minimo.sql`](supabase/migrations/001_schema_minimo.sql).
 
-O worker Nota Bot (`src/persistencia/supabaseClient.ts`) lê `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` (alias `SUPABASE_SECRET_KEY`). A chave pode ser JWT `service_role` **ou** `sb_secret_…`. Chaves novas vão no header `apikey` (não como `Authorization: Bearer`) — o SDK ainda dual-header em REST/Storage; o wrapper do cliente remove o Bearer quando a secret é `sb_secret_`.
+O worker Nota Bot e o hotsite Vitrine (`src/persistencia/supabaseClient.ts`) leem `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` (alias `SUPABASE_SECRET_KEY`). A chave pode ser JWT `service_role` **ou** `sb_secret_…`. Chaves novas vão no header `apikey` (não como `Authorization: Bearer`) — o SDK ainda dual-header em REST/Storage; o wrapper do cliente remove o Bearer quando a secret é `sb_secret_`.
+
+Form `leads` usa **o mesmo** `createSupabaseClient` (não há cliente REST paralelo). Helpers: `insertLead` / `insertCrmEvent` em `src/persistencia/helpers.ts`.
 
 Helpers finos (tipados no schema): `readQuotaUsage`, `insertNfseDoc`, `upsertEstablishment`. Sem mTLS SEFIN neste wire.
 
@@ -116,8 +171,9 @@ Helpers finos (tipados no schema): `readQuotaUsage`, `insertNfseDoc`, `upsertEst
 ## Fora deste scaffold
 
 - Spike mTLS / emissão SEFIN real
-- Hotsite, pricing, billing (Vitrine / Dinheiro)
+- Fechar cobrança / mudar preço (Dinheiro Bot)
 - DNS / Cloudflare (`sync.plvria.com.br` já é o host canônico no papel; **não configurar daqui**)
+- Publicar o hotsite em produção (precisa ok Dinheiro Bot + Thiago)
 
 ---
 

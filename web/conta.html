@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>App — Plvria Sync</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="canonical" href="https://sync.plvria.com.br/app" />
+    <meta property="og:url" content="https://sync.plvria.com.br/app" />
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/assets/landing.css" />
+  </head>
+  <body>
+    <div class="draft-banner">
+      Rascunho — e-mail verificado, depois 2FA (TOTP). Sem billing nesta tela.
+    </div>
+    <header class="site-header">
+      <div class="wrap">
+        <a class="brand" href="/">
+          <span class="brand-mark">Plvria Sync</span>
+          <span class="brand-sub">SyncNFe</span>
+        </a>
+        <nav class="nav">
+          <a href="/entrar">Entrar</a>
+          <button class="btn-ghost" type="button" id="btn-logout">Sair</button>
+        </nav>
+      </div>
+    </header>
+    <main class="auth-page wrap">
+      <p class="eyebrow">Onboarding</p>
+      <h1>Sua cota free</h1>
+      <p class="lede" id="conta-copy">
+        Confirme o e-mail e, em seguida, ative o 2FA (TOTP) com um app autenticador.
+        Sem verificação a conta não está pronta pro onboarding. Cobrança e dashboard
+        fiscal/financeiro ficam com o Dinheiro Bot — não nesta UI.
+      </p>
+      <div class="auth-card" id="conta-panel">
+        <p class="form-status" id="conta-status" role="status">Carregando sessão…</p>
+        <div id="unverified" hidden>
+          <p>Enviamos (ou vamos enviar) um e-mail de confirmação. Abra o link e volte aqui.</p>
+          <p class="micro">O 2FA só aparece depois do e-mail confirmado.</p>
+          <button class="btn" type="button" id="btn-confirm-stub" hidden>
+            Simular confirmação (só modo stub)
+          </button>
+        </div>
+        <div id="mfa-challenge" hidden>
+          <h2>Confirme o 2FA</h2>
+          <p>Esta conta já tem autenticador. Digite o código de 6 dígitos para seguir (aal2).</p>
+          <form id="mfa-challenge-form">
+            <div class="field">
+              <label for="mfa_challenge_code">Código TOTP</label>
+              <input
+                id="mfa_challenge_code"
+                name="code"
+                class="mfa-code"
+                inputmode="numeric"
+                autocomplete="one-time-code"
+                pattern="[0-9]{6}"
+                maxlength="6"
+                required
+              />
+            </div>
+            <button class="btn btn-forest" type="submit">Verificar 2FA</button>
+          </form>
+        </div>
+        <div id="verified" hidden>
+          <p>E-mail confirmado. Pode liberar a cota Free50 — sem cartão nesta etapa.</p>
+          <section class="mfa-box" id="mfa-offer">
+            <h2>Proteja a conta com 2FA</h2>
+            <p>
+              TOTP via Supabase Auth MFA (Google Authenticator, 1Password, Authy…).
+              Recomendado agora; <strong>obrigatório antes de publicar</strong> para quem
+              emite NFS-e. MFA não é SEFIN.
+            </p>
+            <p class="micro" id="mfa-on" hidden>2FA ativo nesta conta (aal2).</p>
+            <button class="btn" type="button" id="btn-mfa-enroll">Ativar autenticador (TOTP)</button>
+            <div id="mfa-enroll-panel" hidden>
+              <p>Escaneie o QR no autenticador. Sem QR (modo stub), use o segredo abaixo.</p>
+              <img id="mfa-qr" class="totp-qr" alt="QR TOTP" hidden />
+              <p class="micro">Segredo TOTP</p>
+              <code class="totp-secret" id="mfa-secret"></code>
+              <p class="micro" id="mfa-uri"></p>
+              <form id="mfa-enroll-form">
+                <input type="hidden" name="factor_id" id="mfa_factor_id" />
+                <div class="field">
+                  <label for="mfa_enroll_code">Código de 6 dígitos</label>
+                  <input
+                    id="mfa_enroll_code"
+                    name="code"
+                    class="mfa-code"
+                    inputmode="numeric"
+                    autocomplete="one-time-code"
+                    pattern="[0-9]{6}"
+                    maxlength="6"
+                    required
+                  />
+                </div>
+                <button class="btn btn-forest" type="submit">Confirmar 2FA</button>
+              </form>
+            </div>
+          </section>
+          <button class="btn btn-forest" type="button" id="btn-provision">Liberar cota free</button>
+        </div>
+        <div id="guest" hidden>
+          <p>Nenhuma sessão. <a href="/entrar">Entre ou crie a conta</a>.</p>
+        </div>
+      </div>
+    </main>
+    <script src="/assets/conta.js" type="module"></script>
+  </body>
+</html>
