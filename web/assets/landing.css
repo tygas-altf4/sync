@@ -873,7 +873,7 @@ input:disabled {
   }
 
   .hero-stats {
-    grid-template-columns: 1fr 1fr;
+    display: none;
   }
 
   .nav .hide-sm {
@@ -887,9 +887,16 @@ input:disabled {
     padding-bottom: 40px;
   }
 
+  /* Barra fixa: padding no body pra não cobrir stats / footer. */
+  body {
+    padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+  }
+
   .mobile-cta {
     display: flex;
-    position: sticky;
+    position: fixed;
+    left: 0;
+    right: 0;
     bottom: 0;
     z-index: 5;
     justify-content: center;
