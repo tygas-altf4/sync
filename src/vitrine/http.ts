@@ -113,7 +113,8 @@ function safeJoin(root: string, requestPath: string): string | null {
 }
 
 async function serveStatic(res: ServerResponse, webRoot: string, urlPath: string): Promise<void> {
-  // Rotas curtas HTTPS, sem query. /planos = âncora da landing; /app = área logada (alias /conta).
+  // Rotas curtas HTTPS, sem query. /planos serve a landing e o JS rola até #planos.
+  // /app = área logada (alias /conta).
   const pageMap: Record<string, string> = {
     '/': 'index.html',
     '/index.html': 'index.html',
@@ -436,16 +437,6 @@ async function handleRequest(
         event_type: result.event.event_type,
         payload: result.payload,
       });
-      return;
-    }
-
-    if ((method === 'GET' || method === 'HEAD') && (pathname === '/planos' || pathname === '/planos.html')) {
-      res.writeHead(302, {
-        Location: '/#planos',
-        'X-Robots-Tag': 'noindex, nofollow',
-        'Cache-Control': 'no-store',
-      });
-      res.end();
       return;
     }
 

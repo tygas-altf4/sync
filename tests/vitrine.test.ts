@@ -49,6 +49,7 @@ describe('landing copy', () => {
     assert.match(landing, /id="contato"/);
     assert.match(landing, /href="\/planos"/);
     assert.equal(landing.includes('http://'), false);
+    assert.doesNotMatch(landing, /href="\/[^"]*\?/);
   });
 });
 
@@ -239,9 +240,11 @@ describe('HTTP vitrine', () => {
     assert.match(cadastroHtml, /og:url" content="https:\/\/sync\.plvria\.com\.br\/cadastro"/);
     const entrar = await fetch(`${base}/entrar`);
     assert.equal(entrar.status, 200);
-    const planos = await fetch(`${base}/planos`, { redirect: 'manual' });
-    assert.equal(planos.status, 302);
-    assert.equal(planos.headers.get('location'), '/#planos');
+    const planos = await fetch(`${base}/planos`);
+    assert.equal(planos.status, 200);
+    const planosHtml = await planos.text();
+    assert.match(planosHtml, /id="planos"/);
+    assert.match(planosHtml, /rel="canonical" href="https:\/\/sync\.plvria\.com\.br\/"/);
     const app = await fetch(`${base}/app`);
     assert.equal(app.status, 200);
     assert.match(await app.text(), /rel="canonical" href="https:\/\/sync\.plvria\.com\.br\/app"/);

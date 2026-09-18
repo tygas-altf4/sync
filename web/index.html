@@ -306,6 +306,14 @@
         </div>
       </div>
     </footer>
+    <script>
+      // Path curto /planos: rola na hora, sem esperar o módulo.
+      if (location.pathname === '/planos') {
+        document.addEventListener('DOMContentLoaded', () => {
+          document.getElementById('planos')?.scrollIntoView({ block: 'start' });
+        });
+      }
+    </script>
     <script src="/assets/landing.js" type="module"></script>
   </body>
 </html>
