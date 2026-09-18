@@ -25,7 +25,12 @@ async function session() {
   return response.json();
 }
 
-const config = await loadPublicConfig();
+let config;
+try {
+  config = await loadPublicConfig();
+} catch {
+  config = { authMode: 'stub', turnstileMode: 'stub' };
+}
 const state = await session();
 
 if (!state.user) {

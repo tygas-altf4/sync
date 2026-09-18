@@ -68,6 +68,30 @@ Não inventar API fiscal paralela — SEFIN/DPS continua no núcleo (`src/sefin`
 
 **Publicar** o hotsite **somente** depois do ok do **Dinheiro Bot** e do **Thiago**. DNS/Cloudflare de `sync` fica fora deste PR.
 
+### Staging preview (ephemeral, sem DNS)
+
+URL pública de rascunho em `*.workers.dev` — **não** aponta `sync.plvria.com.br`, **não** é publish de produção.
+
+```bash
+npx --yes wrangler@latest deploy --temporary
+```
+
+`--temporary` cria conta Cloudflare de preview. **Claim obrigatório em 60 min** — sem claim o Worker some e a URL passa a responder 500. Abrir o link não basta: entrar/criar conta Cloudflare e completar o fluxo. Sem `wrangler.toml` de custom domain. Worker: `workers/vitrine.ts` + assets `web/`.
+
+**Env do preview** (`wrangler.jsonc` `vars` — stubs para o app bootar):
+
+| Var | Preview | Sem ela |
+|---|---|---|
+| `SYNCNFE_AMBIENTE` | `ProducaoRestrita` | default restrita |
+| `SYNCNFE_PUBLIC_HOST` | `sync.plvria.com.br` (copy/canonical; sem DNS daqui) | default |
+| `SUPABASE_ANON_KEY` | `preview-anon-placeholder` | `authMode=stub` mesmo assim, porque falta `SUPABASE_URL` |
+| `SUPABASE_URL` | **omitir** no preview | store/auth stub; form não toca o banco |
+| `SUPABASE_SERVICE_ROLE_KEY` / `SUPABASE_SECRET_KEY` | **omitir** | leads em memória |
+| `TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` | **omitir** | captcha checkbox stub |
+| `UPSTASH_REDIS_REST_URL` / `_TOKEN` | **omitir** | rate limit em memória |
+
+Para gravar `leads` de verdade no preview, injetar `SUPABASE_URL` + service role **só no Worker** (secret, nunca `vars` públicas). Anon sozinha não insert `leads`.
+
 ---
 
 ## Como rodar
@@ -132,6 +156,7 @@ src/
 ├── vitrine/          # Hotsite DRAFT — leads / Auth / Turnstile / handoff (sem SEFIN)
 └── config/           # ProducaoRestrita | Producao + bases URL
 web/                  # Landing pt-BR + form (servido por `npm run web`)
+workers/              # Preview Cloudflare (`workers.dev`, sem DNS canônico)
 schemas/xsd/          # XSD oficiais (ainda não baixados)
 tests/                # node:test — Quota + persistência + vitrine (sem cert real, sem rede)
 ```

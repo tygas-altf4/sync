@@ -51,6 +51,22 @@ describe('landing copy', () => {
     assert.equal(landing.includes('http://'), false);
     assert.doesNotMatch(landing, /href="\/[^"]*\?/);
   });
+
+  it('força canvas claro no Safari iOS (sem texto claro em fundo transparente)', () => {
+    const css = readFileSync(path.join(ROOT, 'web/assets/landing.css'), 'utf8');
+    assert.match(css, /color-scheme:\s*light only/);
+    assert.match(css, /html\s*\{[\s\S]*?background-color:\s*#f3efe6/);
+    assert.match(css, /body\s*\{[\s\S]*?background-color:\s*#f3efe6/);
+    assert.match(css, /body\s*\{[\s\S]*?color:\s*#1b1916/);
+    assert.doesNotMatch(css, /color-mix\(/);
+    assert.match(landing, /color-scheme" content="light only"/);
+    assert.match(landing, /html, body \{ background: #f3efe6; color: #1b1916/);
+    for (const page of ['entrar.html', 'cadastro.html', 'conta.html', 'privacidade.html', 'termos.html']) {
+      const html = readFileSync(path.join(ROOT, 'web', page), 'utf8');
+      assert.match(html, /color-scheme" content="light only"/);
+      assert.match(html, /html, body \{ background: #f3efe6; color: #1b1916/);
+    }
+  });
 });
 
 describe('schema compartilhado', () => {

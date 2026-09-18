@@ -8,7 +8,12 @@ const planInterest = document.getElementById('plan_interest');
 const postLead = document.getElementById('post-lead');
 const signupBtn = document.getElementById('btn-signup');
 
-const publicConfig = await loadPublicConfig();
+let publicConfig;
+try {
+  publicConfig = await loadPublicConfig();
+} catch {
+  publicConfig = { turnstileMode: 'stub' };
+}
 mountCaptcha(document.getElementById('lead-captcha'), document.getElementById('turnstile_token'), publicConfig);
 
 if (window.location.pathname === '/planos') {

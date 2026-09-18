@@ -61,16 +61,28 @@ function clampIp(ip: string): string {
   return trimmed === '' ? 'unknown' : trimmed.slice(0, 128);
 }
 
-export function clientIp(headers: IncomingHttpHeaders, remoteAddress?: string): string {
-  const forwarded = headers['x-forwarded-for'];
-  const raw = Array.isArray(forwarded) ? forwarded[0] : forwarded;
-  if (raw && raw.trim() !== '') {
-    return clampIp(raw.split(',')[0] ?? 'unknown');
+function headerValue(
+  headers: IncomingHttpHeaders | { get(name: string): string | null },
+  name: string,
+): string | undefined {
+  if (typeof (headers as { get?: unknown }).get === 'function') {
+    return (headers as { get(name: string): string | null }).get(name) ?? undefined;
   }
-  const real = headers['x-real-ip'];
-  const realRaw = Array.isArray(real) ? real[0] : real;
-  if (realRaw && realRaw.trim() !== '') {
-    return clampIp(realRaw);
+  const value = (headers as IncomingHttpHeaders)[name];
+  return Array.isArray(value) ? value[0] : value;
+}
+
+export function clientIp(
+  headers: IncomingHttpHeaders | { get(name: string): string | null },
+  remoteAddress?: string,
+): string {
+  const forwarded = headerValue(headers, 'x-forwarded-for') ?? headerValue(headers, 'cf-connecting-ip');
+  if (forwarded && forwarded.trim() !== '') {
+    return clampIp(forwarded.split(',')[0] ?? 'unknown');
+  }
+  const real = headerValue(headers, 'x-real-ip');
+  if (real && real.trim() !== '') {
+    return clampIp(real);
   }
   return clampIp(remoteAddress ?? 'unknown');
 }

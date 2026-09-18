@@ -1,0 +1,20 @@
+{
+  // Preview ephemeral em workers.dev. Sem routes, sem DNS de sync.plvria.com.br.
+  "name": "plvria-sync-hotsite-preview",
+  "main": "workers/vitrine.ts",
+  "compatibility_date": "2026-09-18",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "preview_urls": true,
+  "assets": {
+    "directory": "./web",
+    "binding": "ASSETS",
+    "html_handling": "none",
+    "run_worker_first": true
+  },
+  "vars": {
+    "SYNCNFE_AMBIENTE": "ProducaoRestrita",
+    "SYNCNFE_PUBLIC_HOST": "sync.plvria.com.br",
+    "SUPABASE_ANON_KEY": "preview-anon-placeholder"
+  }
+}
