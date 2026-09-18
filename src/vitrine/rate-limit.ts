@@ -1,3 +1,5 @@
+import type { IncomingHttpHeaders } from 'node:http';
+
 /**
  * Rate limit dia 1 — form de lead, cadastro e login.
  *
@@ -54,10 +56,7 @@ function clampIp(ip: string): string {
   return trimmed === '' ? 'unknown' : trimmed.slice(0, 128);
 }
 
-export function clientIp(headers: {
-  'x-forwarded-for'?: string | string[];
-  'x-real-ip'?: string | string[];
-}, remoteAddress?: string): string {
+export function clientIp(headers: IncomingHttpHeaders, remoteAddress?: string): string {
   const forwarded = headers['x-forwarded-for'];
   const raw = Array.isArray(forwarded) ? forwarded[0] : forwarded;
   if (raw && raw.trim() !== '') {

@@ -15,6 +15,7 @@ import { createVitrineStore, type VitrineStore } from './store.js';
 import { createAuthService, normalizeEmail, type AuthService } from './auth.js';
 import { createTurnstileVerifier, type CaptchaVerifier } from './captcha.js';
 import { assertNoSecrets, loadPublicConfig, type PublicVitrineConfig } from './public-config.js';
+import { createRateLimiter, clientIp, RATE_LIMIT_MESSAGE, type RateLimiter, type RateLimitRoute } from './rate-limit.js';
 import { clearSessionCookie, readSessionToken, setSessionCookie } from './session.js';
 
 const MODULE_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -39,6 +40,7 @@ export type VitrineHttpOptions = {
   auth?: AuthService;
   captcha?: CaptchaVerifier;
   publicConfig?: PublicVitrineConfig;
+  rateLimiter?: RateLimiter;
 };
 
 type Runtime = {
@@ -47,6 +49,7 @@ type Runtime = {
   auth: AuthService;
   captcha: CaptchaVerifier;
   publicConfig: PublicVitrineConfig;
+  rateLimiter: RateLimiter;
 };
 
 function json(res: ServerResponse, status: number, body: unknown, extraHeaders: Record<string, string> = {}): void {
@@ -146,6 +149,7 @@ export function createVitrineServer(options: VitrineHttpOptions = {}): Server {
     auth: options.auth ?? createAuthService(),
     captcha: options.captcha ?? createTurnstileVerifier(),
     publicConfig: options.publicConfig ?? loadPublicConfig(),
+    rateLimiter: options.rateLimiter ?? createRateLimiter(),
   };
 
   return createServer((req: IncomingMessage, res: ServerResponse) => {
@@ -155,6 +159,30 @@ export function createVitrineServer(options: VitrineHttpOptions = {}): Server {
 
 function asRecord(body: unknown): Record<string, unknown> {
   return body !== null && typeof body === 'object' ? (body as Record<string, unknown>) : {};
+}
+
+async function enforceRateLimit(
+  req: IncomingMessage,
+  res: ServerResponse,
+  runtime: Runtime,
+  route: RateLimitRoute,
+  email: unknown,
+): Promise<boolean> {
+  const decision = await runtime.rateLimiter.consume({
+    route,
+    ip: clientIp(req.headers, req.socket.remoteAddress),
+    email: typeof email === 'string' ? email : null,
+  });
+  if (decision.allowed) {
+    return true;
+  }
+  json(
+    res,
+    429,
+    { ok: false, error: RATE_LIMIT_MESSAGE, stub: decision.stub, limitedBy: decision.limitedBy },
+    { 'Retry-After': String(decision.retryAfterSec) },
+  );
+  return false;
 }
 
 async function handleRequest(
@@ -171,7 +199,10 @@ async function handleRequest(
     if (method === 'GET' && pathname === '/api/public-config') {
       const payload = runtime.publicConfig;
       assertNoSecrets(payload);
-      json(res, 200, payload);
+      json(res, 200, {
+        ...payload,
+        rateLimitMode: runtime.rateLimiter.mode,
+      });
       return;
     }
 
@@ -184,6 +215,9 @@ async function handleRequest(
 
     if (method === 'POST' && pathname === '/api/auth/signup') {
       const body = asRecord(await readJsonBody(req));
+      if (!(await enforceRateLimit(req, res, runtime, 'signup', body['email']))) {
+        return;
+      }
       const captcha = await runtime.captcha(body['turnstile_token']);
       if (!captcha.ok) {
         json(res, 400, { ok: false, error: captcha.error });
@@ -211,6 +245,9 @@ async function handleRequest(
 
     if (method === 'POST' && pathname === '/api/auth/login') {
       const body = asRecord(await readJsonBody(req));
+      if (!(await enforceRateLimit(req, res, runtime, 'login', body['email']))) {
+        return;
+      }
       const captcha = await runtime.captcha(body['turnstile_token']);
       if (!captcha.ok) {
         json(res, 400, { ok: false, error: captcha.error });
@@ -258,6 +295,9 @@ async function handleRequest(
 
     if (method === 'POST' && pathname === '/api/leads') {
       const body = asRecord(await readJsonBody(req));
+      if (!(await enforceRateLimit(req, res, runtime, 'leads', body['email']))) {
+        return;
+      }
       const captcha = await runtime.captcha(body['turnstile_token']);
       if (!captcha.ok) {
         json(res, 400, { ok: false, error: captcha.error });

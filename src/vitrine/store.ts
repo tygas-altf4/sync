@@ -1,4 +1,22 @@
-import { loadConfig } from '../config/ambientes.js';
+/**
+ * Store da Vitrine. Stub em memória sem env; com env usa o cliente
+ * compartilhado `createSupabaseClient` (#5) — sem fetch REST paralelo.
+ */
+import {
+  createSupabaseClient,
+  readSupabaseSecretKey,
+  readSupabaseUrl,
+  type CreateSupabaseClientOptions,
+} from '../persistencia/supabaseClient.js';
+import {
+  getLead,
+  insertAccount,
+  insertCrmEvent,
+  insertLead,
+  insertQuotaUsageRow,
+  updateLead,
+  type PersistenciaClient,
+} from '../persistencia/helpers.js';
 import type {
   AccountInsert,
   AccountRow,
@@ -29,6 +47,19 @@ function newId(): string {
   return crypto.randomUUID();
 }
 
+function toLeadRow(
+  row: LeadInsert,
+  extras: { id: string; created_at: string },
+): LeadRow {
+  return {
+    ...row,
+    id: extras.id,
+    created_at: extras.created_at,
+    updated_at: extras.created_at,
+    upgrade_handoff_at: null,
+  };
+}
+
 export class MemoryVitrineStore implements VitrineStore {
   readonly leads = new Map<string, LeadRow>();
   readonly accounts = new Map<string, AccountRow>();
@@ -36,14 +67,7 @@ export class MemoryVitrineStore implements VitrineStore {
   readonly events: CrmEventRow[] = [];
 
   async insertLead(row: LeadInsert): Promise<LeadRow> {
-    const stamped = nowIso();
-    const saved: LeadRow = {
-      ...row,
-      id: newId(),
-      created_at: stamped,
-      updated_at: stamped,
-      upgrade_handoff_at: null,
-    };
+    const saved = toLeadRow(row, { id: newId(), created_at: nowIso() });
     this.leads.set(saved.id, saved);
     return saved;
   }
@@ -80,98 +104,151 @@ export class MemoryVitrineStore implements VitrineStore {
   }
 }
 
-function restHeaders(serviceRoleKey: string): Record<string, string> {
+function fromDbLead(row: {
+  id: string;
+  created_at: string;
+  nome: string;
+  email: string;
+  cnpj: string | null;
+  cnpj_pendente: boolean;
+  volume_mensal: string;
+  perfil: string;
+  lgpd_at: string;
+  origem: string;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  stage: string;
+  account_id: string | null;
+}): LeadRow {
   return {
-    apikey: serviceRoleKey,
-    Authorization: `Bearer ${serviceRoleKey}`,
-    'Content-Type': 'application/json',
-    Prefer: 'return=representation',
+    nome: row.nome,
+    email: row.email,
+    cnpj: row.cnpj,
+    cnpj_pendente: row.cnpj_pendente,
+    volume_mensal: row.volume_mensal as LeadInsert['volume_mensal'],
+    perfil: row.perfil as LeadInsert['perfil'],
+    lgpd_at: row.lgpd_at,
+    origem: 'hotsite',
+    utm_source: row.utm_source,
+    utm_medium: row.utm_medium,
+    utm_campaign: row.utm_campaign,
+    stage: row.stage as LeadInsert['stage'],
+    account_id: row.account_id,
+    id: row.id,
+    created_at: row.created_at,
+    updated_at: row.created_at,
+    upgrade_handoff_at: null,
   };
 }
 
 export class SupabaseVitrineStore implements VitrineStore {
-  constructor(
-    private readonly baseUrl: string,
-    private readonly serviceRoleKey: string,
-  ) {}
-
-  private url(path: string): string {
-    return `${this.baseUrl.replace(/\/$/, '')}/rest/v1/${path}`;
-  }
-
-  private async post<T>(table: string, body: unknown): Promise<T> {
-    const response = await fetch(this.url(table), {
-      method: 'POST',
-      headers: restHeaders(this.serviceRoleKey),
-      body: JSON.stringify(body),
-    });
-    if (!response.ok) {
-      const detail = await response.text();
-      throw new Error(`supabase ${table} ${response.status}: ${detail.slice(0, 400)}`);
-    }
-    const rows = (await response.json()) as T[];
-    const first = rows[0];
-    if (first === undefined) {
-      throw new Error(`supabase ${table}: resposta vazia`);
-    }
-    return first;
-  }
+  constructor(private readonly client: PersistenciaClient) {}
 
   async insertLead(row: LeadInsert): Promise<LeadRow> {
-    return this.post<LeadRow>('leads', row);
+    const saved = await insertLead(this.client, {
+      nome: row.nome,
+      email: row.email,
+      cnpj: row.cnpj,
+      cnpj_pendente: row.cnpj_pendente,
+      volume_mensal: row.volume_mensal,
+      perfil: row.perfil,
+      lgpd_at: row.lgpd_at,
+      origem: row.origem,
+      utm_source: row.utm_source,
+      utm_medium: row.utm_medium,
+      utm_campaign: row.utm_campaign,
+      stage: row.stage,
+      account_id: row.account_id,
+    });
+    return fromDbLead(saved);
   }
 
   async getLead(id: string): Promise<LeadRow | null> {
-    const response = await fetch(this.url(`leads?id=eq.${encodeURIComponent(id)}&select=*`), {
-      headers: restHeaders(this.serviceRoleKey),
-    });
-    if (!response.ok) {
-      throw new Error(`supabase leads get ${response.status}`);
-    }
-    const rows = (await response.json()) as LeadRow[];
-    return rows[0] ?? null;
+    const row = await getLead(this.client, id);
+    return row === null ? null : fromDbLead(row);
   }
 
   async updateLead(id: string, patch: Partial<LeadRow>): Promise<LeadRow> {
-    const response = await fetch(this.url(`leads?id=eq.${encodeURIComponent(id)}`), {
-      method: 'PATCH',
-      headers: restHeaders(this.serviceRoleKey),
-      body: JSON.stringify(patch),
+    const saved = await updateLead(this.client, id, {
+      ...(patch.account_id !== undefined ? { account_id: patch.account_id } : {}),
+      ...(patch.stage !== undefined ? { stage: patch.stage } : {}),
+      ...(patch.cnpj !== undefined ? { cnpj: patch.cnpj } : {}),
+      ...(patch.cnpj_pendente !== undefined ? { cnpj_pendente: patch.cnpj_pendente } : {}),
     });
-    if (!response.ok) {
-      const detail = await response.text();
-      throw new Error(`supabase leads patch ${response.status}: ${detail.slice(0, 400)}`);
-    }
-    const rows = (await response.json()) as LeadRow[];
-    const first = rows[0];
-    if (first === undefined) {
-      throw new Error('supabase leads patch: resposta vazia');
-    }
-    return first;
+    return fromDbLead(saved);
   }
 
   async insertAccount(row: AccountInsert): Promise<AccountRow> {
-    return this.post<AccountRow>('accounts', row);
+    if (row.owner_user_id === null) {
+      throw new Error('accounts.owner_user_id é obrigatório (auth.users)');
+    }
+    const saved = await insertAccount(this.client, {
+      owner_user_id: row.owner_user_id,
+      name: row.name,
+      plan_code: row.plan_code,
+      plan_status: row.plan_status,
+      lead_id: row.lead_id,
+    });
+    return {
+      id: saved.id,
+      created_at: saved.created_at,
+      owner_user_id: saved.owner_user_id,
+      name: saved.name,
+      plan_code: saved.plan_code as AccountRow['plan_code'],
+      plan_status: saved.plan_status as AccountRow['plan_status'],
+      lead_id: saved.lead_id ?? row.lead_id,
+    };
   }
 
   async insertQuotaUsage(row: QuotaUsageInsert): Promise<QuotaUsageRow> {
-    return this.post<QuotaUsageRow>('quota_usage', row);
+    const saved = await insertQuotaUsageRow(this.client, {
+      account_id: row.account_id,
+      period_yyyymm: row.period_yyyymm,
+      notes_used: row.notes_used,
+      notes_quota: row.notes_quota,
+    });
+    return {
+      account_id: saved.account_id,
+      period_yyyymm: saved.period_yyyymm,
+      notes_used: saved.notes_used,
+      notes_quota: saved.notes_quota,
+    };
   }
 
   async insertCrmEvent(row: CrmEventInsert): Promise<CrmEventRow> {
-    return this.post<CrmEventRow>('crm_events', row);
+    const saved = await insertCrmEvent(this.client, {
+      lead_id: row.lead_id,
+      account_id: row.account_id,
+      event_type: row.type,
+      payload: row.payload,
+    });
+    return {
+      id: saved.id,
+      created_at: saved.created_at,
+      lead_id: saved.lead_id,
+      account_id: saved.account_id,
+      type: saved.event_type as CrmEventRow['type'],
+      payload: saved.payload,
+    };
   }
 }
 
-export function createVitrineStore(env: NodeJS.ProcessEnv = process.env): {
+export function createVitrineStore(
+  env: NodeJS.ProcessEnv = process.env,
+  clientOptions: CreateSupabaseClientOptions = {},
+): {
   store: VitrineStore;
   mode: StoreMode;
 } {
-  const config = loadConfig(env);
-  const url = config.supabaseUrl?.trim();
-  const key = config.supabaseServiceRoleKey?.trim();
+  const url = readSupabaseUrl(env);
+  const key = readSupabaseSecretKey(env);
   if (url && key) {
-    return { store: new SupabaseVitrineStore(url, key), mode: 'supabase' };
+    const client = createSupabaseClient({
+      env,
+      fetch: clientOptions.fetch,
+    });
+    return { store: new SupabaseVitrineStore(client), mode: 'supabase' };
   }
   return { store: new MemoryVitrineStore(), mode: 'stub' };
 }

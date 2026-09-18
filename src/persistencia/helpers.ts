@@ -1,11 +1,18 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { PersistenciaError } from '../errors.js';
 import type {
+  AccountInsert,
+  AccountRow,
+  CrmEventInsert,
+  CrmEventRow,
   Database,
   EstablishmentInsert,
   EstablishmentRow,
+  LeadInsert,
+  LeadRow,
   NfseDocInsert,
   NfseDocRow,
+  QuotaUsageInsert,
   QuotaUsageRow,
 } from './database.js';
 import { looksLikeCertificateMaterial } from './Persistencia.js';
@@ -81,6 +88,77 @@ export async function upsertEstablishment(
 
   if (error || data === null) {
     throwPersistencia('Falha ao upsert establishment', error);
+  }
+  return data;
+}
+
+/**
+ * Insert do hotsite em `leads`. Só service role (RLS: anon não insert/select).
+ * Chamado depois do captcha na rota Vitrine — não pelo browser.
+ */
+export async function insertLead(
+  client: PersistenciaClient,
+  row: LeadInsert,
+): Promise<LeadRow> {
+  const { data, error } = await client.from('leads').insert(row).select().single();
+  if (error || data === null) {
+    throwPersistencia('Falha ao inserir leads', error);
+  }
+  return data;
+}
+
+export async function getLead(
+  client: PersistenciaClient,
+  id: string,
+): Promise<LeadRow | null> {
+  const { data, error } = await client.from('leads').select('*').eq('id', id).maybeSingle();
+  if (error) {
+    throwPersistencia('Falha ao ler leads', error);
+  }
+  return data;
+}
+
+export async function updateLead(
+  client: PersistenciaClient,
+  id: string,
+  patch: Partial<LeadInsert>,
+): Promise<LeadRow> {
+  const { data, error } = await client.from('leads').update(patch).eq('id', id).select().single();
+  if (error || data === null) {
+    throwPersistencia('Falha ao atualizar leads', error);
+  }
+  return data;
+}
+
+export async function insertAccount(
+  client: PersistenciaClient,
+  row: AccountInsert,
+): Promise<AccountRow> {
+  const { data, error } = await client.from('accounts').insert(row).select().single();
+  if (error || data === null) {
+    throwPersistencia('Falha ao inserir accounts', error);
+  }
+  return data;
+}
+
+export async function insertQuotaUsageRow(
+  client: PersistenciaClient,
+  row: QuotaUsageInsert,
+): Promise<QuotaUsageRow> {
+  const { data, error } = await client.from('quota_usage').insert(row).select().single();
+  if (error || data === null) {
+    throwPersistencia('Falha ao inserir quota_usage', error);
+  }
+  return data;
+}
+
+export async function insertCrmEvent(
+  client: PersistenciaClient,
+  row: CrmEventInsert,
+): Promise<CrmEventRow> {
+  const { data, error } = await client.from('crm_events').insert(row).select().single();
+  if (error || data === null) {
+    throwPersistencia('Falha ao inserir crm_events', error);
   }
   return data;
 }

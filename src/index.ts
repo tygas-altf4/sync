@@ -54,17 +54,32 @@ export type {
 } from './persistencia/supabaseClient.js';
 
 export {
+  getLead,
+  insertAccount,
+  insertCrmEvent,
+  insertLead,
   insertNfseDoc,
+  insertQuotaUsageRow,
   readQuotaUsage,
+  updateLead,
   upsertEstablishment,
 } from './persistencia/helpers.js';
 export type { PersistenciaClient } from './persistencia/helpers.js';
 
 export type {
+  AccountInsert,
+  AccountRow,
+  AccountUpdate,
+  CrmEventInsert,
+  CrmEventRow,
+  CrmEventUpdate,
   Database,
   EstablishmentInsert,
   EstablishmentRow,
   EstablishmentUpdate,
+  LeadInsert,
+  LeadRow,
+  LeadUpdate,
   NfseDocInsert,
   NfseDocRow,
   NfseDocUpdate,

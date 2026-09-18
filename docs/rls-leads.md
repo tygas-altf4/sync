@@ -16,9 +16,11 @@ O browser **nunca** recebe `SUPABASE_SERVICE_ROLE_KEY`. No cliente só entram:
 - `SUPABASE_ANON_KEY`
 - `TURNSTILE_SITE_KEY`
 
-Insert do hotsite: `POST /api/leads` → valida Turnstile (ou stub se as chaves faltarem) → insert com service role.
-
 Signup Auth: anon key no servidor (`/api/auth/*`). Confirmação de e-mail obrigatória antes de `accounts` + `quota_usage`.
+
+O SQL em `supabase/migrations/001_schema_minimo.sql` já liga RLS. Policy `leads_owner_select` só libera SELECT depois de `account_id` + owner. **Não há policy de INSERT para anon** — o form passa por `createSupabaseClient` (service role) depois do captcha.
+
+Insert do hotsite: `POST /api/leads` → Turnstile → `insertLead(createSupabaseClient())`. Sem cliente REST paralelo.
 
 ## SQL mínimo esperado
 

@@ -31,9 +31,13 @@ export function loadPublicConfig(env: NodeJS.ProcessEnv = process.env): PublicVi
 export function assertNoSecrets(payload: unknown, env: NodeJS.ProcessEnv = process.env): void {
   const serialized = JSON.stringify(payload);
   const secret = env['SUPABASE_SERVICE_ROLE_KEY']?.trim();
+  const secretAlias = env['SUPABASE_SECRET_KEY']?.trim();
   const turnstileSecret = env['TURNSTILE_SECRET_KEY']?.trim();
   if (secret && serialized.includes(secret)) {
     throw new Error('service role vazou para o cliente');
+  }
+  if (secretAlias && serialized.includes(secretAlias)) {
+    throw new Error('SUPABASE_SECRET_KEY vazou para o cliente');
   }
   if (turnstileSecret && serialized.includes(turnstileSecret)) {
     throw new Error('TURNSTILE_SECRET_KEY vazou para o cliente');

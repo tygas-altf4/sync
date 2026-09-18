@@ -8,8 +8,11 @@ import { MemoryAuthService } from '../src/vitrine/auth.ts';
 import { createTurnstileVerifier } from '../src/vitrine/captcha.ts';
 import { createVitrineServer } from '../src/vitrine/http.ts';
 import { assertNoSecrets, loadPublicConfig } from '../src/vitrine/public-config.ts';
+import { MemoryRateLimiter, RATE_LIMIT_POLICY } from '../src/vitrine/rate-limit.ts';
 import { provisionFreeAccount } from '../src/vitrine/signup.ts';
-import { MemoryVitrineStore } from '../src/vitrine/store.ts';
+import { createVitrineStore, MemoryVitrineStore } from '../src/vitrine/store.ts';
+import { insertLead } from '../src/persistencia/helpers.ts';
+import { createSupabaseClient } from '../src/persistencia/supabaseClient.ts';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -233,6 +236,117 @@ describe('HTTP auth + captcha', () => {
     await new Promise<void>((resolve, reject) => {
       locked.close((err) => (err ? reject(err) : resolve()));
     });
+  });
+});
+
+describe('rate limit', () => {
+  it('enforcement em memória por IP mesmo sem Upstash', async () => {
+    const limiter = new MemoryRateLimiter();
+    const ip = '203.0.113.9';
+    const max = RATE_LIMIT_POLICY.leads.ip.max;
+    for (let i = 0; i < max; i += 1) {
+      const ok = await limiter.consume({ route: 'leads', ip, email: `n${i}@x.com` });
+      assert.equal(ok.allowed, true);
+      assert.equal(ok.stub, true);
+      assert.equal(ok.mode, 'memory');
+    }
+    const blocked = await limiter.consume({ route: 'leads', ip, email: 'last@x.com' });
+    assert.equal(blocked.allowed, false);
+    assert.equal(blocked.limitedBy, 'ip');
+  });
+
+  it('HTTP 429 no form quando o limiter recusa', async () => {
+    const limiter = new MemoryRateLimiter(() => 0);
+    const server = createVitrineServer({
+      store: new MemoryVitrineStore(),
+      mode: 'stub',
+      rateLimiter: limiter,
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()));
+    const port = (server.address() as AddressInfo).port;
+    const payload = {
+      nome: 'Ana Souza',
+      email: 'ana@empresa.com.br',
+      cnpj_pendente: true,
+      volume_mensal: 'ate_50',
+      perfil: 'empresa',
+      lgpd: true,
+    };
+    let last = 200;
+    for (let i = 0; i < RATE_LIMIT_POLICY.leads.email.max + 1; i += 1) {
+      const res = await fetch(`http://127.0.0.1:${port}/api/leads`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      last = res.status;
+    }
+    assert.equal(last, 429);
+    await new Promise<void>((resolve, reject) => {
+      server.close((err) => (err ? reject(err) : resolve()));
+    });
+  });
+});
+
+describe('form→leads via helpers #5', () => {
+  it('insertLead usa createSupabaseClient e POSTa /rest/v1/leads com apikey', async () => {
+    const SECRET = 'sb_secret_testkey_not_a_jwt';
+    const URL = 'https://sync-plvria.supabase.co';
+    const calls: { url: string; method: string; apikey: string | null; auth: string | null }[] = [];
+    const row = {
+      id: 'lead-db',
+      created_at: '2026-09-18T00:00:00.000Z',
+      nome: 'Ana Souza',
+      email: 'ana@empresa.com.br',
+      cnpj: null,
+      cnpj_pendente: true,
+      volume_mensal: 'ate_50',
+      perfil: 'empresa',
+      lgpd_at: '2026-09-18T00:00:00.000Z',
+      origem: 'hotsite',
+      utm_source: null,
+      utm_medium: null,
+      utm_campaign: null,
+      stage: 'novo',
+      account_id: null,
+      notes: null,
+    };
+    const client = createSupabaseClient({
+      env: { SUPABASE_URL: URL, SUPABASE_SERVICE_ROLE_KEY: SECRET },
+      fetch: async (input, init) => {
+        const headers = new Headers(init?.headers);
+        calls.push({
+          url: String(input),
+          method: (init?.method ?? 'GET').toUpperCase(),
+          apikey: headers.get('apikey'),
+          auth: headers.get('Authorization'),
+        });
+        return new Response(JSON.stringify(row), {
+          status: 201,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      },
+    });
+    const saved = await insertLead(client, {
+      nome: 'Ana Souza',
+      email: 'ana@empresa.com.br',
+      cnpj_pendente: true,
+      volume_mensal: 'ate_50',
+      perfil: 'empresa',
+      lgpd_at: row.lgpd_at,
+      origem: 'hotsite',
+    });
+    assert.equal(saved.id, 'lead-db');
+    const rest = calls.find((c) => c.url.includes('/rest/v1/leads'));
+    assert.ok(rest);
+    assert.equal(rest.method, 'POST');
+    assert.equal(rest.apikey, SECRET);
+    assert.equal(rest.auth, null);
+    const wired = createVitrineStore({
+      SUPABASE_URL: URL,
+      SUPABASE_SERVICE_ROLE_KEY: SECRET,
+    } as NodeJS.ProcessEnv);
+    assert.equal(wired.mode, 'supabase');
   });
 });
 
