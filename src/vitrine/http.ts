@@ -439,6 +439,16 @@ async function handleRequest(
       return;
     }
 
+    if ((method === 'GET' || method === 'HEAD') && (pathname === '/planos' || pathname === '/planos.html')) {
+      res.writeHead(302, {
+        Location: '/#planos',
+        'X-Robots-Tag': 'noindex, nofollow',
+        'Cache-Control': 'no-store',
+      });
+      res.end();
+      return;
+    }
+
     if (method === 'GET' || method === 'HEAD') {
       await serveStatic(res, webRoot, pathname);
       return;
