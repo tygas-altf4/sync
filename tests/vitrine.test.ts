@@ -28,17 +28,30 @@ const baseLead = {
 
 describe('landing copy', () => {
   it('tem as 5 seções e CTAs do brief, sem escola/ads/checkout', () => {
-    assert.match(landing, /Emita NFS-e Nacional sem travar no meio do caminho/);
-    assert.match(landing, /id="dor"/);
+    assert.match(landing, /Emita NFS-e Nacional e municipal sem burocracia/);
+    assert.match(landing, /id="reforma"/);
+    assert.match(landing, /Pronto pra NFS-e Nacional \+ Reforma 2026/);
     assert.match(landing, /id="como-funciona"/);
+    assert.match(landing, /Cadastrar/);
+    assert.match(landing, /Emitir \/ enviar/);
     assert.match(landing, /id="planos"/);
     assert.match(landing, /id="comecar"/);
+    assert.match(landing, /id="faq"/);
+    assert.match(landing, /id="contador"/);
+    assert.match(landing, /Começar como contador/);
+    assert.match(landing, /Certificado A1/);
+    assert.match(landing, /Segurança/);
+    assert.match(landing, /sem cartão/);
     assert.match(landing, /Começar grátis/);
     assert.match(landing, /Falar com upgrade/);
     assert.match(landing, /free50/);
     assert.match(landing, /starter89/);
     assert.match(landing, /pro249/);
     assert.match(landing, /scale549/);
+    assert.match(landing, /R\$ 0/);
+    assert.match(landing, /R\$ 89/);
+    assert.match(landing, /R\$ 249/);
+    assert.match(landing, /R\$ 549/);
     assert.equal(landing.includes('escola'), false);
     assert.equal(landing.includes('pixel'), false);
     assert.equal(landing.includes('checkout'), false);
@@ -50,6 +63,29 @@ describe('landing copy', () => {
     assert.match(landing, /href="\/planos"/);
     assert.equal(landing.includes('http://'), false);
     assert.doesNotMatch(landing, /href="\/[^"]*\?/);
+  });
+
+  it('força canvas claro no Safari iOS (sem texto claro em fundo transparente)', () => {
+    const css = readFileSync(path.join(ROOT, 'web/assets/landing.css'), 'utf8');
+    assert.match(css, /color-scheme:\s*light only/);
+    assert.match(css, /html\s*\{[\s\S]*?background-color:\s*#f3efe6/);
+    assert.match(css, /body\s*\{[\s\S]*?background-color:\s*#f3efe6/);
+    assert.match(css, /body\s*\{[\s\S]*?color:\s*#1b1916/);
+    assert.doesNotMatch(css, /color-mix\(/);
+    assert.match(landing, /color-scheme" content="light only"/);
+    assert.match(landing, /html, body \{ background: #f3efe6; color: #1b1916/);
+    for (const page of ['entrar.html', 'cadastro.html', 'conta.html', 'privacidade.html', 'termos.html']) {
+      const html = readFileSync(path.join(ROOT, 'web', page), 'utf8');
+      assert.match(html, /color-scheme" content="light only"/);
+      assert.match(html, /html, body \{ background: #f3efe6; color: #1b1916/);
+    }
+  });
+
+  it('prova social é da marca Plvria, não do produto fiscal', () => {
+    assert.match(landing, /Marca Plvria — 15 anos no mercado/);
+    assert.doesNotMatch(landing, /SyncNFe[^<]{0,80}15 anos/);
+    assert.doesNotMatch(landing, /Plvria Sync[^<]{0,80}15 anos/);
+    assert.match(landing, /não herda essa idade/);
   });
 });
 

@@ -8,7 +8,12 @@ const planInterest = document.getElementById('plan_interest');
 const postLead = document.getElementById('post-lead');
 const signupBtn = document.getElementById('btn-signup');
 
-const publicConfig = await loadPublicConfig();
+let publicConfig;
+try {
+  publicConfig = await loadPublicConfig();
+} catch {
+  publicConfig = { turnstileMode: 'stub' };
+}
 mountCaptcha(document.getElementById('lead-captcha'), document.getElementById('turnstile_token'), publicConfig);
 
 if (window.location.pathname === '/planos') {
@@ -147,5 +152,14 @@ for (const button of document.querySelectorAll('[data-upgrade]')) {
 for (const link of document.querySelectorAll('[data-plan="free50"]')) {
   link.addEventListener('click', () => {
     planInterest.value = '';
+  });
+}
+
+for (const link of document.querySelectorAll('[data-perfil]')) {
+  link.addEventListener('click', () => {
+    // Prefill do select sem query string (teste da landing recusa href com ?).
+    const perfil = document.getElementById('perfil');
+    const value = link.getAttribute('data-perfil');
+    if (perfil && value) perfil.value = value;
   });
 }
