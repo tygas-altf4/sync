@@ -86,12 +86,13 @@ function jsonResponse(
 
 async function serveAsset(request: Request, env: PreviewEnv, pathname: string): Promise<Response> {
   const mapped = PAGE_MAP[pathname];
+  // Binding ASSETS — não fazer fetch() no próprio workers.dev (erro 1042).
   const assetUrl = new URL(request.url);
   if (mapped !== undefined) {
     assetUrl.pathname = `/${mapped}`;
+    assetUrl.search = '';
   }
-  const assetRequest = new Request(assetUrl.toString(), request);
-  const response = await env.ASSETS.fetch(assetRequest);
+  const response = await env.ASSETS.fetch(assetUrl);
   if (response.status === 404) {
     return new Response('<!doctype html><title>404</title><p>Não encontrado.</p>', {
       status: 404,
