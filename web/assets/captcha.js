@@ -25,10 +25,11 @@ export function mountCaptcha(slot, tokenInput, config) {
     return;
   }
 
+  // Sem site key: checkbox honesto. Não inventar Turnstile nem expor nome de env.
   slot.innerHTML = `
     <label class="check stub-captcha">
       <input type="checkbox" id="${slot.id}-stub" />
-      <span>Não sou um robô <small>(Turnstile em modo rascunho — sem TURNSTILE_SITE_KEY / SECRET)</small></span>
+      <span>Não sou um robô <small>(rascunho — captcha real entra quando as chaves de produção estiverem no ar)</small></span>
     </label>
   `;
   const box = slot.querySelector('input[type="checkbox"]');

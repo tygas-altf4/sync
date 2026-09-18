@@ -30,15 +30,21 @@ describe('landing copy', () => {
   it('tem as 5 seções e CTAs do brief, sem escola/ads/checkout', () => {
     assert.match(landing, /Emita NFS-e Nacional sem travar no meio do caminho/);
     assert.match(landing, /id="dor"/);
+    assert.match(landing, /Por que agora/);
     assert.match(landing, /id="como-funciona"/);
     assert.match(landing, /id="planos"/);
     assert.match(landing, /id="comecar"/);
+    assert.match(landing, /id="faq"/);
     assert.match(landing, /Começar grátis/);
     assert.match(landing, /Falar com upgrade/);
     assert.match(landing, /free50/);
     assert.match(landing, /starter89/);
     assert.match(landing, /pro249/);
     assert.match(landing, /scale549/);
+    assert.match(landing, /R\$ 0/);
+    assert.match(landing, /R\$ 89/);
+    assert.match(landing, /R\$ 249/);
+    assert.match(landing, /R\$ 549/);
     assert.equal(landing.includes('escola'), false);
     assert.equal(landing.includes('pixel'), false);
     assert.equal(landing.includes('checkout'), false);
@@ -66,6 +72,13 @@ describe('landing copy', () => {
       assert.match(html, /color-scheme" content="light only"/);
       assert.match(html, /html, body \{ background: #f3efe6; color: #1b1916/);
     }
+  });
+
+  it('prova social é da marca Plvria, não do produto fiscal', () => {
+    assert.match(landing, /Marca Plvria — 15 anos no mercado/);
+    assert.doesNotMatch(landing, /SyncNFe[^<]{0,80}15 anos/);
+    assert.doesNotMatch(landing, /Plvria Sync[^<]{0,80}15 anos/);
+    assert.match(landing, /não herda essa idade/);
   });
 });
 

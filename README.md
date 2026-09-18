@@ -76,7 +76,15 @@ URL pública de rascunho em `*.workers.dev` — **não** aponta `sync.plvria.com
 npx --yes wrangler@latest deploy --temporary
 ```
 
-`--temporary` cria conta Cloudflare de preview. **Claim obrigatório em 60 min** — sem claim o Worker some e a URL passa a responder 500. Abrir o link não basta: entrar/criar conta Cloudflare e completar o fluxo. Sem `wrangler.toml` de custom domain. Worker: `workers/vitrine.ts` + assets `web/`.
+`--temporary` cria conta Cloudflare de preview. **Claim obrigatório em 60 min** — sem claim o Worker some e a URL passa a responder 500. Abrir o link não basta: entrar/criar conta Cloudflare e completar o fluxo.
+
+**Caminho a host estável (ainda sem DNS canônico):**
+
+1. Claim do Worker temp (janela 60 min), **ou**
+2. Deploy nomeado numa conta Cloudflare própria (`wrangler deploy` **sem** `--temporary`, hostname `*.workers.dev` da conta) — continua staging, **sem** CNAME/A de `sync.plvria.com.br`, **ou**
+3. Host canônico `https://sync.plvria.com.br` só depois do ok Dinheiro Bot + Thiago (DNS/proxy fora deste PR).
+
+Sem `wrangler.toml` de custom domain neste repo. Worker: `workers/vitrine.ts` + assets `web/`. Preview conhecido (enquanto o claim valer): `https://plvria-sync-hotsite-preview.chartreuse-frost.workers.dev/`.
 
 **Env do preview** (`wrangler.jsonc` `vars` — stubs para o app bootar):
 

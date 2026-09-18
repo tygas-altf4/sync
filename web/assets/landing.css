@@ -186,14 +186,40 @@ img {
 .hero {
   position: relative;
   z-index: 1;
-  padding: 72px 0 88px;
+  padding: 56px 0 48px;
 }
 
 .hero-grid {
   display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
-  gap: 48px;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 40px;
+  align-items: start;
+}
+
+/* Prova social da marca guarda-chuva — não atribuir os 15 anos ao produto fiscal. */
+.proof-badge {
+  display: inline-flex;
   align-items: center;
+  gap: 8px;
+  margin: 0 0 18px;
+  padding: 6px 12px 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fffaf3;
+  color: var(--forest);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  max-width: 100%;
+}
+
+.proof-badge::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--copper);
+  flex-shrink: 0;
 }
 
 .eyebrow {
@@ -233,10 +259,14 @@ h2 {
 }
 
 .lede,
-.hero p {
+.hero-lead {
   color: var(--ink-soft);
   font-size: 1.12rem;
   max-width: 38rem;
+}
+
+.hero-lead {
+  margin: 0 0 8px;
 }
 
 .hero-actions {
@@ -244,6 +274,84 @@ h2 {
   flex-wrap: wrap;
   gap: 12px;
   margin: 28px 0 12px;
+}
+
+.hero-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 28px 0 0;
+  padding: 0;
+}
+
+.hero-stats div {
+  background: #fffaf3;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+
+.hero-stats dt {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.hero-stats dd {
+  margin: 4px 0 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+#comecar,
+#planos,
+#faq,
+#dor,
+#como-funciona {
+  scroll-margin-top: 88px;
+}
+
+.hero-panel {
+  background: #fffaf3;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 24px 22px 22px;
+  box-shadow: var(--shadow);
+}
+
+.hero-panel h2 {
+  font-size: 1.65rem;
+  margin-bottom: 6px;
+}
+
+.hero-panel .ticket-kicker {
+  color: var(--copper-dark);
+}
+
+.trust {
+  position: relative;
+  z-index: 1;
+  border-block: 1px solid var(--line);
+  background: #fffaf3;
+  padding: 18px 0;
+}
+
+.trust-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px 20px;
+}
+
+.trust-row p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.trust-row strong {
+  color: var(--forest);
+  font-weight: 640;
 }
 
 .micro {
@@ -303,6 +411,10 @@ h2 {
   background: var(--forest);
   color: var(--paper);
   padding: 80px 0;
+}
+
+.eyebrow-on-dark {
+  color: var(--stamp);
 }
 
 .pain h2,
@@ -425,6 +537,19 @@ h2 {
   margin-bottom: 12px;
 }
 
+.plan-code {
+  margin: 0 0 4px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+.plan.featured .plan-code {
+  color: var(--stamp);
+}
+
 .plan h3 {
   font-size: 1.7rem;
   margin-bottom: 4px;
@@ -445,7 +570,7 @@ h2 {
   color: #cfc8bb;
 }
 
-.plan p {
+.plan p:not(.plan-code) {
   flex: 1;
   font-size: 15px;
   color: inherit;
@@ -469,10 +594,59 @@ h2 {
   color: var(--ink-soft);
 }
 
+.faq {
+  position: relative;
+  z-index: 1;
+  padding: 12px 0 64px;
+}
+
+.faq-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 28px;
+  max-width: 720px;
+}
+
+.faq-list details {
+  background: #fffaf3;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 14px 18px;
+}
+
+.faq-list summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.faq-list details p {
+  margin: 10px 0 4px;
+  color: var(--ink-soft);
+}
+
 .cta-final {
   position: relative;
   z-index: 1;
   padding: 0 0 96px;
+}
+
+.close-cta {
+  background: var(--forest);
+  color: var(--paper);
+  border-radius: 8px;
+  padding: 40px 36px;
+  box-shadow: var(--shadow);
+}
+
+.close-cta h2,
+.close-cta .lede,
+.close-cta .micro,
+.close-cta .eyebrow {
+  color: var(--paper);
+}
+
+.close-cta .btn {
+  margin: 8px 0 12px;
 }
 
 .cta-panel {
@@ -483,6 +657,11 @@ h2 {
   border: 1px solid var(--line);
   padding: 36px;
   box-shadow: var(--shadow);
+}
+
+/* CTA fixo no viewport estreito — o form do hero some abaixo da dobra. */
+.mobile-cta {
+  display: none;
 }
 
 form {
@@ -687,8 +866,14 @@ input:disabled {
   .pain-list,
   .steps,
   .plan-grid,
-  .field-row {
+  .field-row,
+  .hero-stats,
+  .trust-row {
     grid-template-columns: 1fr;
+  }
+
+  .hero-stats {
+    grid-template-columns: 1fr 1fr;
   }
 
   .nav .hide-sm {
@@ -698,7 +883,22 @@ input:disabled {
   .hero,
   .how,
   .pain {
-    padding-top: 48px;
-    padding-bottom: 56px;
+    padding-top: 36px;
+    padding-bottom: 40px;
+  }
+
+  .mobile-cta {
+    display: flex;
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    justify-content: center;
+    margin: 0;
+    padding: 14px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+    background: var(--copper);
+    border-top: 1px solid var(--copper-dark);
+    color: #fffaf5;
+    text-decoration: none;
+    font-weight: 600;
   }
 }
