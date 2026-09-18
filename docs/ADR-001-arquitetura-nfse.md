@@ -4,6 +4,7 @@
 |---|---|
 | Status | Aceito |
 | Data | 2026-09-18 |
+| Emenda | 2026-09-18 — §4 Rate limiting; §3 MFA/2FA (obrigatório antes de publicar para quem emite) |
 | Produto | SyncNFe / Plvria Sync |
 | Escopo | Cliente SEFIN Nacional (DPS → NFS-e) neste repositório |
 
@@ -98,15 +99,28 @@ P0 relativo à base: `POST /nfse`, `GET /nfse/{chaveAcesso}`, `GET|HEAD /dps/{id
 |---|---|---|
 | Login / sessão | **Vitrine** → Supabase Auth | Área autenticada = sessão Supabase. Sem auth paralela neste repo |
 | E-mail | Supabase Auth | Verificação de e-mail **obrigatória** antes de uso operacional (emitir, cert, cota, worker) |
+| MFA / 2FA | **Vitrine** (UX) → Supabase Auth MFA | Recomendado day-1; **obrigatório antes de publicar** para titulares que emitem NFS-e. Sync/Nota **não** implementa o desafio MFA. MFA **não** é trabalho do SEFIN |
 | Captcha (signup / form público) | **Vitrine** (UX) | **Obrigatório** neste ADR: Turnstile ou hCaptcha. Sync não implementa o widget; recusa fluxo sem captcha no signup |
 | RLS | Schema Supabase | Policies em `establishments`, `quota_usage`, `nfse_docs`, `accounts` + buckets. Browser só com JWT do usuário |
 | Service role | **Nota Bot** (server/worker) | Somente após contexto de conta autenticada estar estabelecido. **Nunca** no browser, `.env` de front, bundle ou `NEXT_PUBLIC_*` |
 | Certificado A1 | Worker | Só `certificate_vault_ref` + Storage `certificates` privado (service-role). **Nunca** no front (upload direto, download, PEM/PFX em JS) |
 | Segredos | Server | Sem API keys, service role, senha PFX, `SUPABASE_SERVICE_ROLE_KEY` no frontend |
 
-Fronteira: Vitrine ownership de auth user-facing + captcha. Sync/Nota worker não autentica o humano — recebe `account_id` já autenticado e verificado e aí usa service role no fio SEFIN / Storage. Cliente browser = anon/publishable key + JWT; qualquer outra chave é bug.
+Fronteira: Vitrine ownership de auth user-facing + captcha + MFA. Sync/Nota worker não autentica o humano — recebe `account_id` já autenticado e verificado (e-mail + MFA, quando o titular emite) e aí usa service role no fio SEFIN / Storage. Cliente browser = anon/publishable key + JWT; qualquer outra chave é bug.
 
-## 4. Rejeição e retry
+## 4. Rate limiting
+
+Obrigatório **antes de publicar**. Distinto da cota (`quota_usage`): cota = teto mensal de notas; rate limit = proteção de abuso (rajada, credential stuffing, flood no form).
+
+| Superfície | Quem | Regra |
+|---|---|---|
+| Signup / form público | **Vitrine** (edge) | Throttle no edge (Cloudflare e/ou Edge Function). Sem isso o form `leads` não vai ao ar |
+| Auth login | **Vitrine** → Supabase Auth | Rate limit de login (Auth + edge). Sem auth paralela neste repo |
+| `POST` emissão | **Nota** / Sync | Rate limit **por `account_id`**, **além** do `Quota.assert`. Esgotar o burst ≠ esgotar `notes_quota` |
+
+Não publicar a 1ª fatia sem os três. Publicar **sem Dinheiro** (billing) é ok; sem estes limits ou sem MFA nos emissores (§3) não.
+
+## 5. Rejeição e retry
 
 Fluxo pós-`POST /nfse`:
 
@@ -120,12 +134,12 @@ Reconciliação obrigatória após POST incerto: `HEAD /dps/{id}` (existe?) e/ou
 
 Id DPS (45): IBGE(7) + tpInscr(1) + IEFed(14) + série(5) + nDPS(15).
 
-## 5. Fora de escopo (explícito)
+## 6. Fora de escopo (explícito)
 
 | Item | Onde vive / por quê |
 |---|---|
 | Hotsite, CRM, leads, `crm_events` | **Vitrine** — não neste repo |
-| Login, verificação de e-mail, widget captcha | **Vitrine** (Supabase Auth + Turnstile/hCaptcha). Sync não autentica o humano |
+| Login, verificação de e-mail, widget captcha, MFA UX | **Vitrine** (Supabase Auth MFA + Turnstile/hCaptcha). Sync não autentica o humano; MFA não é SEFIN |
 | Billing, Stripe/Asaas, `price_brl`, ownership de plano comercial | **Dinheiro** — Sync só lê `plan_code` / snapshot de cota |
 | ABRASF municipal legado (“puro”) | Fora. Conectores `campinas` / `sao_paulo` são depois, mesmo schema |
 | Reinventar protocolo SEFIN / XSD / XMLDSig | Wrapper MIT (open-nfse) ou extração pontual |
@@ -136,7 +150,7 @@ Id DPS (45): IBGE(7) + tpInscr(1) + IEFed(14) + série(5) + nDPS(15).
 | IBS/CBS (`IBSCBS` / RTC) como regra bloqueante | DTO extensível; não bloquear P0 |
 | UI emissor, marketing de planos | Fora |
 
-## 6. Consequências e próximos spikes
+## 7. Consequências e próximos spikes
 
 **Consequências**
 
@@ -144,7 +158,8 @@ Id DPS (45): IBGE(7) + tpInscr(1) + IEFed(14) + série(5) + nDPS(15).
 - Sem segundo contrato de dados. Qualquer tela/API Sync lê as mesmas tabelas.
 - Troca de ambiente errada em produção emite NFS-e real — o default **é** `ProducaoRestrita`.
 - Timeout sem `GET|HEAD /dps/{id}` pode duplicar autorização.
-- Service role ou PFX no browser é violação deste ADR; emissão operacional sem e-mail verificado idem.
+- Service role ou PFX no browser é violação deste ADR; emissão operacional sem e-mail verificado ou sem MFA no titular (após publish) idem.
+- Publicar sem rate limit no form, no login e no `POST` emissão (por account) viola §4. Cota esgotada ≠ burst de requests. Publicar sem Dinheiro é ok; sem MFA nos emissores não.
 
 **Spikes seguintes (sem alargar este ADR)**
 
