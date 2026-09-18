@@ -564,6 +564,13 @@ input:disabled {
   margin-right: 14px;
 }
 
+.footer-email {
+  display: inline-block;
+  margin: 6px 0 2px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
 .legal {
   position: relative;
   z-index: 1;

@@ -43,6 +43,8 @@ describe('landing copy', () => {
     assert.equal(landing.includes('pixel'), false);
     assert.equal(landing.includes('checkout'), false);
     assert.match(landing, /https:\/\/sync\.plvria\.com\.br/);
+    assert.match(landing, /mailto:plvria@plvria\.com\.br/);
+    assert.match(landing, /id="contato"/);
   });
 });
 
