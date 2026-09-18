@@ -1,6 +1,8 @@
 import { QuotaDeniedError } from '../errors.js';
 import type { PlanCode } from '../types.js';
 
+export { QuotaDeniedError } from '../errors.js';
+
 /**
  * Limites técnicos (enforcement no app), alinhados a
  * `subscriptions.notes_quota` / snapshot em `quota_usage.notes_quota`.
