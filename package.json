@@ -12,7 +12,9 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "tsx --test tests/*.test.ts",
-    "lint": "eslint src tests"
+    "lint": "eslint src tests",
+    "web": "tsx src/vitrine/server.ts",
+    "dev:web": "tsx watch src/vitrine/server.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",

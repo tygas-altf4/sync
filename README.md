@@ -14,6 +14,37 @@ Este repositório é o **scaffold** do cliente SEFIN. **Não emite NFS-e real ai
 
 ---
 
+## Hotsite + CRM (Vitrine) — DRAFT
+
+Landing de captura em `web/` + API em `src/vitrine/`. **Não é publicação em produção.**
+
+| | |
+|---|---|
+| Host canônico / CTAs / og:url | `https://sync.plvria.com.br` |
+| Público | empresa (ME/Simples/serviço) e contador — **não escolas**, sem cross-sell escolar |
+| CTA primário | Começar grátis |
+| Planos pagos | Falar com upgrade (handoff; **sem cobrança** nesta UI) |
+| Form → | `leads` (`origem=hotsite`, `stage=novo`, `lgpd_at`) |
+| Signup stub → | `accounts` free50 + `quota_usage` + lead `teste` + `crm_events` `stage_change` |
+| Upgrade stub → | `crm_events` `upgrade_handoff` (payload do mapa Vitrine↔Supabase) |
+
+```bash
+npm run web
+# http://127.0.0.1:3000
+```
+
+**Env (não commitar segredos):**
+
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY` — só no servidor; anon **não** faz select em `leads`
+- `PORT` — opcional (padrão 3000)
+
+Sem URL/service role, `POST /api/leads`, `/api/signup` e `/api/upgrade-handoff` **stubam** (memória + log). Com as vars, inserem no schema compartilhado via PostgREST. Não inventar API fiscal paralela — SEFIN/DPS continua no núcleo (`src/sefin`, Nota Bot).
+
+**Publicar** o hotsite **somente** depois do ok do **Dinheiro Bot** e do **Thiago**. DNS/Cloudflare de `sync` fica fora deste PR.
+
+---
+
 ## Como rodar
 
 ```bash
@@ -21,6 +52,7 @@ npm install
 npm test
 npm run build
 npm run lint
+npm run web
 ```
 
 Copie `.env.example` para `.env` se for experimentar config local. Não commite `.env`, `*.pfx` nem `*.p12`.
@@ -72,9 +104,11 @@ src/
 ├── quota/            # Quota — bloqueia se notes_used >= notes_quota
 ├── persistencia/     # Supabase: establishments, nfse_docs; só vault_ref
 ├── retry/            # RetryStore — 429 / 5xx / timeout + replay DPS
+├── vitrine/          # Hotsite DRAFT — leads / signup / handoff (sem SEFIN)
 └── config/           # ProducaoRestrita | Producao + bases URL
+web/                  # Landing pt-BR + form (servido por `npm run web`)
 schemas/xsd/          # XSD oficiais (ainda não baixados)
-tests/                # node:test — Quota (sem cert real, sem rede)
+tests/                # node:test — Quota + vitrine (sem cert real, sem rede)
 ```
 
 ### Cotas (limite técnico)
@@ -104,8 +138,9 @@ Alinhado a `quota_usage.notes_quota` / `subscriptions.notes_quota`:
 ## Fora deste scaffold
 
 - Spike mTLS / emissão SEFIN real
-- Hotsite, pricing, billing (Vitrine / Dinheiro)
+- Fechar cobrança / mudar preço (Dinheiro Bot)
 - DNS / Cloudflare (`sync.plvria.com.br` já é o host canônico no papel; **não configurar daqui**)
+- Publicar o hotsite em produção (precisa ok Dinheiro Bot + Thiago)
 
 ---
 
