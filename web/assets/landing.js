@@ -99,7 +99,7 @@ form?.addEventListener('submit', async (event) => {
     postLead.hidden = false;
     const email = form.querySelector('#email')?.value ?? '';
     const nome = form.querySelector('#nome')?.value ?? '';
-    const next = new URL('/entrar', window.location.origin);
+    const next = new URL('/cadastro', window.location.origin);
     next.searchParams.set('lead_id', result.lead_id);
     if (email) next.searchParams.set('email', email);
     if (nome) next.searchParams.set('nome', nome);

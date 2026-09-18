@@ -548,11 +548,16 @@ input:disabled {
   font-size: 14px;
 }
 
-.site-footer .wrap {
+.site-footer .wrap,
+.footer-grid {
   display: flex;
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
+}
+
+.auth-card-wide {
+  max-width: 560px;
 }
 
 .site-footer a {

@@ -57,6 +57,12 @@ async function postAuth(path, form) {
 
 signupForm?.addEventListener('submit', async (event) => {
   event.preventDefault();
+  const pass = signupForm.querySelector('[name="password"]')?.value ?? '';
+  const confirm = signupForm.querySelector('[name="password_confirm"]')?.value;
+  if (confirm !== undefined && confirm !== pass) {
+    setStatus('As senhas não batem.', 'err');
+    return;
+  }
   setStatus('Criando conta…', '');
   try {
     const { response, result } = await postAuth('/api/auth/signup', signupForm);

@@ -211,6 +211,11 @@ describe('HTTP vitrine', () => {
     assert.match(res.headers.get('content-type') ?? '', /text\/html/);
     assert.match(html, /Começar grátis/);
     assert.match(res.headers.get('x-robots-tag') ?? '', /noindex/);
+    const cadastro = await fetch(`${base}/cadastro`);
+    assert.equal(cadastro.status, 200);
+    assert.match(await cadastro.text(), /Criar conta SyncNFe/);
+    const entrar = await fetch(`${base}/entrar`);
+    assert.equal(entrar.status, 200);
   });
 
   it('POST /api/leads valida e stubba sem service role', async () => {

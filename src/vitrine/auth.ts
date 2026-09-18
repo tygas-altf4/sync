@@ -1,3 +1,8 @@
+/**
+ * Cadastro/login da Vitrine. Símbolos em inglês; comportamento alinhado ao
+ * Supabase Auth. Sem service role aqui — signup/login usam a anon key.
+ * E-mail começa não confirmado; onboarding só depois de `email_confirmed`.
+ */
 import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
 
 export type AuthUser = {
@@ -27,6 +32,8 @@ export interface AuthService {
   signIn(input: { email: string; password: string }): Promise<AuthSuccess | AuthFailure>;
   getUser(accessToken: string): Promise<AuthUser | null>;
   confirmEmail(accessToken: string): Promise<AuthSuccess | AuthFailure>;
+  recoverPassword(email: string): Promise<{ ok: true; stub: boolean } | AuthFailure>;
+  resendConfirmation(email: string): Promise<{ ok: true; stub: boolean } | AuthFailure>;
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -123,6 +130,21 @@ export class MemoryAuthService implements AuthService {
     }
     user.email_confirmed = true;
     return { ok: true, stub: true, session: this.issue(user) };
+  }
+
+  async recoverPassword(email: string): Promise<{ ok: true; stub: boolean } | AuthFailure> {
+    if (!EMAIL_RE.test(normalizeEmail(email))) {
+      return { ok: false, error: 'E-mail inválido.', status: 400 };
+    }
+    // Stub: não manda SMTP. Resposta igual com ou sem usuário pra não vazar cadastro.
+    return { ok: true, stub: true };
+  }
+
+  async resendConfirmation(email: string): Promise<{ ok: true; stub: boolean } | AuthFailure> {
+    if (!EMAIL_RE.test(normalizeEmail(email))) {
+      return { ok: false, error: 'E-mail inválido.', status: 400 };
+    }
+    return { ok: true, stub: true };
   }
 
   private issue(user: MemoryUser): AuthSession {
@@ -269,6 +291,38 @@ export class SupabaseAuthService implements AuthService {
       error: 'Confirme pelo e-mail do Supabase Auth. Este draft não confirma pelo service role.',
       status: 400,
     };
+  }
+
+  async recoverPassword(email: string): Promise<{ ok: true; stub: boolean } | AuthFailure> {
+    const normalized = normalizeEmail(email);
+    if (!EMAIL_RE.test(normalized)) {
+      return { ok: false, error: 'E-mail inválido.', status: 400 };
+    }
+    const response = await this.fetchImpl(this.url('/auth/v1/recover'), {
+      method: 'POST',
+      headers: this.headers(),
+      body: JSON.stringify({ email: normalized }),
+    });
+    if (!response.ok) {
+      return { ok: false, error: 'Não deu pra pedir a recuperação agora.', status: response.status };
+    }
+    return { ok: true, stub: false };
+  }
+
+  async resendConfirmation(email: string): Promise<{ ok: true; stub: boolean } | AuthFailure> {
+    const normalized = normalizeEmail(email);
+    if (!EMAIL_RE.test(normalized)) {
+      return { ok: false, error: 'E-mail inválido.', status: 400 };
+    }
+    const response = await this.fetchImpl(this.url('/auth/v1/resend'), {
+      method: 'POST',
+      headers: this.headers(),
+      body: JSON.stringify({ type: 'signup', email: normalized }),
+    });
+    if (!response.ok) {
+      return { ok: false, error: 'Não deu pra reenviar a confirmação.', status: response.status };
+    }
+    return { ok: true, stub: false };
   }
 }
 

@@ -114,6 +114,8 @@ async function serveStatic(res: ServerResponse, webRoot: string, urlPath: string
     '/termos.html': 'termos.html',
     '/entrar': 'entrar.html',
     '/entrar.html': 'entrar.html',
+    '/cadastro': 'cadastro.html',
+    '/cadastro.html': 'cadastro.html',
     '/conta': 'conta.html',
     '/conta.html': 'conta.html',
   };
