@@ -8,7 +8,7 @@ Núcleo TypeScript da **NFS-e Nacional** (SEFIN) da Plvria.
 | Host canônico | `sync.plvria.com.br` |
 | Apex | `plvria.com.br` é **gestão escolar** — não misturar produto, DNS nem deploy |
 | Stack | Node.js 20+ / TypeScript |
-| Persistência | Supabase (`establishments`, `nfse_docs`, `quota_usage` + Storage) |
+| Persistência | Supabase projeto **sync plvria** (`establishments`, `nfse_docs`, `quota_usage` + Storage) |
 
 Este repositório é o **scaffold** do cliente SEFIN. **Não emite NFS-e real ainda** (sem mTLS / A1 neste PR).
 
@@ -76,11 +76,11 @@ src/
 ├── eventos/          # Eventos — cancelar 101101; substituir via nova DPS
 ├── parametros/       # ParametrosMunicipais — ADN parametrizacao (P1)
 ├── quota/            # Quota — bloqueia se notes_used >= notes_quota
-├── persistencia/     # Supabase: establishments, nfse_docs; só vault_ref
+├── persistencia/     # Cliente service-role + helpers (quota_usage / nfse_docs / establishments)
 ├── retry/            # RetryStore — 429 / 5xx / timeout + replay DPS
 └── config/           # ProducaoRestrita | Producao + bases URL
 schemas/xsd/          # XSD oficiais (ainda não baixados)
-tests/                # node:test — Quota (sem cert real, sem rede)
+tests/                # node:test — Quota + persistência (fetch mock, sem rede)
 ```
 
 ### Cotas (limite técnico)
@@ -97,6 +97,12 @@ Alinhado a `quota_usage.notes_quota` / `subscriptions.notes_quota`:
 `Quota.assert` lê `quota_usage` e, se `notes_used >= notes_quota`, lança `QuotaDeniedError` (HTTP 429, log `quota.denied`) **antes** do wire SEFIN. Incremento só após `201` / autorização. Rejeição permanente não consome. Sandbox não aplica o gate.
 
 ### Persistência
+
+Schema mínimo **aplicado** no projeto Supabase **sync plvria**. Fonte versionada: [`supabase/migrations/001_schema_minimo.sql`](supabase/migrations/001_schema_minimo.sql).
+
+O worker Nota Bot (`src/persistencia/supabaseClient.ts`) lê `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` (alias `SUPABASE_SECRET_KEY`). A chave pode ser JWT `service_role` **ou** `sb_secret_…`. Chaves novas vão no header `apikey` (não como `Authorization: Bearer`) — o SDK ainda dual-header em REST/Storage; o wrapper do cliente remove o Bearer quando a secret é `sb_secret_`.
+
+Helpers finos (tipados no schema): `readQuotaUsage`, `insertNfseDoc`, `upsertEstablishment`. Sem mTLS SEFIN neste wire.
 
 - `establishments`: CNPJ, `channel` (`nacional` na 1ª fatia), `certificate_vault_ref`, `certificate_expires_at`
 - `nfse_docs`: metadados (`dps_id`, `chave_acesso`, `status`, `environment` `restrita`\|`producao`, `xml_storage_path`)
@@ -119,6 +125,6 @@ Alinhado a `quota_usage.notes_quota` / `subscriptions.notes_quota`:
 
 1. **A1 ICP-Brasil** — PFX/P12 com EKU Autenticação Cliente; senha em secret store; mesmo cert para mTLS da conexão e XMLDSig. Não versionar o arquivo.
 2. **Swagger SEFIN Restrita com A1** — abrir o portal e confirmar `basePath` real (com/sem `/API`). Colar o path canônico em `src/config/ambientes.ts`.
-3. **Schema Supabase** — aplicar o SQL mínimo (`establishments`, `nfse_docs`, `quota_usage`, buckets `nfse-xml` + `certificates`). Worker SEFIN usa service role.
+3. **Schema Supabase** — SQL em `supabase/migrations/`; já aplicado no projeto **sync plvria**. Confirmar buckets `nfse-xml` + `certificates` (privados, service-role).
 4. Baixar XSD/anexos atuais (DPS / Eventos / RTC) para `schemas/xsd/`.
 5. Só então: implementar `Certificado.load` + spike `POST /nfse` em Produção Restrita + persistir `nfse_docs` / `quota_usage`.
