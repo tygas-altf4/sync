@@ -8,9 +8,15 @@ Núcleo TypeScript da **NFS-e Nacional** (SEFIN) da Plvria.
 | Host canônico | `sync.plvria.com.br` |
 | Apex | `plvria.com.br` é **gestão escolar** — não misturar produto, DNS nem deploy |
 | Stack | Node.js 20+ / TypeScript |
-| Persistência | Supabase (`establishments`, `nfse_docs`, `quota_usage` + Storage) |
+| Persistência | Supabase projeto **sync plvria** (`establishments`, `nfse_docs`, `quota_usage` + Storage) |
 
 Este repositório é o **scaffold** do cliente SEFIN. **Não emite NFS-e real ainda** (sem mTLS / A1 neste PR).
+
+## Arquitetura
+
+Decisões não negociáveis (schema, SEFIN, cota, A1, wire, fronteira de auth, MFA, rate limit): [ADR-001 — Arquitetura NFS-e](docs/ADR-001-arquitetura-nfse.md).
+
+Agentes Cursor: [AGENTS.md](AGENTS.md).
 
 ---
 
@@ -40,7 +46,8 @@ npm run web
 |---|---|---|
 | `SUPABASE_URL` | server + público via `/api/public-config` | projeto |
 | `SUPABASE_ANON_KEY` | server + público via `/api/public-config` | Auth (nunca select `leads`) |
-| `SUPABASE_SERVICE_ROLE_KEY` | **só servidor** | insert `leads` / `accounts` / `crm_events` depois do captcha |
+| `SUPABASE_SERVICE_ROLE_KEY` | **só servidor** | `createSupabaseClient` — leads/accounts/crm depois do captcha |
+| `SUPABASE_SECRET_KEY` | **só servidor** | alias da service role / `sb_secret_` |
 | `TURNSTILE_SITE_KEY` | público | widget Cloudflare Turnstile |
 | `TURNSTILE_SECRET_KEY` | **só servidor** | siteverify; se faltar, captcha **stuba** |
 | `PORT` | server | padrão 3000 |
@@ -114,13 +121,13 @@ src/
 ├── eventos/          # Eventos — cancelar 101101; substituir via nova DPS
 ├── parametros/       # ParametrosMunicipais — ADN parametrizacao (P1)
 ├── quota/            # Quota — bloqueia se notes_used >= notes_quota
-├── persistencia/     # Supabase: establishments, nfse_docs; só vault_ref
+├── persistencia/     # Cliente service-role + helpers (quota_usage / nfse_docs / establishments)
 ├── retry/            # RetryStore — 429 / 5xx / timeout + replay DPS
 ├── vitrine/          # Hotsite DRAFT — leads / Auth / Turnstile / handoff (sem SEFIN)
 └── config/           # ProducaoRestrita | Producao + bases URL
 web/                  # Landing pt-BR + form (servido por `npm run web`)
 schemas/xsd/          # XSD oficiais (ainda não baixados)
-tests/                # node:test — Quota + vitrine (sem cert real, sem rede)
+tests/                # node:test — Quota + persistência + vitrine (sem cert real, sem rede)
 ```
 
 ### Cotas (limite técnico)
@@ -137,6 +144,14 @@ Alinhado a `quota_usage.notes_quota` / `subscriptions.notes_quota`:
 `Quota.assert` lê `quota_usage` e, se `notes_used >= notes_quota`, lança `QuotaDeniedError` (HTTP 429, log `quota.denied`) **antes** do wire SEFIN. Incremento só após `201` / autorização. Rejeição permanente não consome. Sandbox não aplica o gate.
 
 ### Persistência
+
+Schema mínimo **aplicado** no projeto Supabase **sync plvria**. Fonte versionada: [`supabase/migrations/001_schema_minimo.sql`](supabase/migrations/001_schema_minimo.sql).
+
+O worker Nota Bot e o hotsite Vitrine (`src/persistencia/supabaseClient.ts`) leem `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` (alias `SUPABASE_SECRET_KEY`). A chave pode ser JWT `service_role` **ou** `sb_secret_…`. Chaves novas vão no header `apikey` (não como `Authorization: Bearer`) — o SDK ainda dual-header em REST/Storage; o wrapper do cliente remove o Bearer quando a secret é `sb_secret_`.
+
+Form `leads` usa **o mesmo** `createSupabaseClient` (não há cliente REST paralelo). Helpers: `insertLead` / `insertCrmEvent` em `src/persistencia/helpers.ts`.
+
+Helpers finos (tipados no schema): `readQuotaUsage`, `insertNfseDoc`, `upsertEstablishment`. Sem mTLS SEFIN neste wire.
 
 - `establishments`: CNPJ, `channel` (`nacional` na 1ª fatia), `certificate_vault_ref`, `certificate_expires_at`
 - `nfse_docs`: metadados (`dps_id`, `chave_acesso`, `status`, `environment` `restrita`\|`producao`, `xml_storage_path`)
@@ -160,6 +175,6 @@ Alinhado a `quota_usage.notes_quota` / `subscriptions.notes_quota`:
 
 1. **A1 ICP-Brasil** — PFX/P12 com EKU Autenticação Cliente; senha em secret store; mesmo cert para mTLS da conexão e XMLDSig. Não versionar o arquivo.
 2. **Swagger SEFIN Restrita com A1** — abrir o portal e confirmar `basePath` real (com/sem `/API`). Colar o path canônico em `src/config/ambientes.ts`.
-3. **Schema Supabase** — aplicar o SQL mínimo (`establishments`, `nfse_docs`, `quota_usage`, buckets `nfse-xml` + `certificates`). Worker SEFIN usa service role.
+3. **Schema Supabase** — SQL em `supabase/migrations/`; já aplicado no projeto **sync plvria**. Confirmar buckets `nfse-xml` + `certificates` (privados, service-role).
 4. Baixar XSD/anexos atuais (DPS / Eventos / RTC) para `schemas/xsd/`.
 5. Só então: implementar `Certificado.load` + spike `POST /nfse` em Produção Restrita + persistir `nfse_docs` / `quota_usage`.

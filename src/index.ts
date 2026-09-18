@@ -38,6 +38,41 @@ export type {
   SaveEstablishmentInput,
 } from './persistencia/Persistencia.js';
 
+export {
+  createSupabaseClient,
+  fetchSecretAsApikeyOnly,
+  isNewFormatApiKey,
+  readSupabaseSecretKey,
+  readSupabaseUrl,
+  requireSupabaseSecretKey,
+  requireSupabaseUrl,
+} from './persistencia/supabaseClient.js';
+export type {
+  CreateSupabaseClientOptions,
+  NotaBotSupabaseClient,
+  SupabaseEnv,
+} from './persistencia/supabaseClient.js';
+
+export {
+  insertNfseDoc,
+  readQuotaUsage,
+  upsertEstablishment,
+} from './persistencia/helpers.js';
+export type { PersistenciaClient } from './persistencia/helpers.js';
+
+export type {
+  Database,
+  EstablishmentInsert,
+  EstablishmentRow,
+  EstablishmentUpdate,
+  NfseDocInsert,
+  NfseDocRow,
+  NfseDocUpdate,
+  QuotaUsageInsert,
+  QuotaUsageRow,
+  QuotaUsageUpdate,
+} from './persistencia/database.js';
+
 export { RetryStore } from './retry/RetryStore.js';
 export type { PendingReplay, RetryReason } from './retry/RetryStore.js';
 

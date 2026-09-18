@@ -1,0 +1,11 @@
+---
+description: Comentários e docs em português (o quê / por quê)
+alwaysApply: true
+---
+
+# Comentários em português
+
+- Comentários e docs explicam **o quê / por quê** em **português**.
+- Nomes de símbolos em inglês ok (`Quota.assert`, `NfseClient`, `certificate_vault_ref`).
+- Sem comentário óbvio, narrativo ou que só repete o código.
+- README, ADR e JSDoc seguem o mesmo idioma.
