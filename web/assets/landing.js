@@ -35,11 +35,20 @@ cnpjInput?.addEventListener('input', () => {
   cnpjInput.value = maskCnpj(cnpjInput.value);
 });
 
-cnpjPendente?.addEventListener('change', () => {
+function syncCnpjPending() {
+  if (!cnpjInput || !cnpjPendente) return;
   const pending = cnpjPendente.checked;
   cnpjInput.disabled = pending;
-  if (pending) cnpjInput.value = '';
-});
+  if (pending) {
+    cnpjInput.value = '';
+    cnpjInput.placeholder = 'Completo no onboarding';
+  } else {
+    cnpjInput.placeholder = '00.000.000/0000-00';
+  }
+}
+
+cnpjPendente?.addEventListener('change', syncCnpjPending);
+syncCnpjPending();
 
 function setStatus(message, kind) {
   statusEl.textContent = message;

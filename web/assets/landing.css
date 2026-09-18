@@ -242,16 +242,6 @@ h2 {
   border-radius: 8px;
   padding: 28px 26px 24px;
   box-shadow: var(--shadow);
-  position: relative;
-}
-
-.ticket::after {
-  content: "";
-  position: absolute;
-  left: 18px;
-  right: 18px;
-  bottom: 62px;
-  border-top: 1px dashed color-mix(in srgb, var(--paper) 35%, transparent);
 }
 
 .ticket-kicker {
@@ -518,6 +508,12 @@ select:focus {
   outline-offset: 1px;
 }
 
+input:disabled {
+  background: var(--paper-2);
+  color: var(--ink-soft);
+  cursor: not-allowed;
+}
+
 .check {
   display: flex;
   gap: 10px;
@@ -536,6 +532,7 @@ select:focus {
 
 .form-status.ok {
   color: var(--ok);
+  font-weight: 600;
 }
 
 .form-status.err {
