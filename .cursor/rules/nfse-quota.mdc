@@ -1,0 +1,15 @@
+---
+description: Cota antes do SEFIN, plan_codes e wrapper open-nfse (MIT)
+alwaysApply: true
+---
+
+# NFS-e / cota
+
+Lei: `docs/ADR-001-arquitetura-nfse.md` §2.2–2.3 e §4.
+
+- `Quota.assert` (`SELECT … FOR UPDATE` em `quota_usage`) **antes** de qualquer wire SEFIN. `notes_used >= notes_quota` → `QuotaDeniedError` (429, `quota.denied`). Sandbox não aplica.
+- Consumir cota **somente** após SEFIN **201** / autorização. Rejeição permanente não consome.
+- `plan_code` estável: `free50`=50, `starter89`=150, `pro249`=1000, `scale549`=4000. Snapshot em `quota_usage.notes_quota`. Período `period_yyyymm` UTC-3.
+- Rate limit de `POST` emissão **por `account_id`** é obrigatório além da cota (ADR §4). Não confundir burst com teto mensal.
+- SEFIN via wrapper **open-nfse** (MIT): sign, mTLS, gzip, paths. Não reinventar XMLDSig/XSD. Sem AGPL. Ownership Sync = cota, persistência, retry.
+- Canal 1ª fatia = `nacional`. Sem API paralela ao schema Supabase.

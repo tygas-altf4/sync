@@ -4,6 +4,7 @@
 |---|---|
 | Status | Aceito |
 | Data | 2026-09-18 |
+| Emenda | 2026-09-18 — §4 Rate limiting (obrigatório antes de publicar) |
 | Produto | SyncNFe / Plvria Sync |
 | Escopo | Cliente SEFIN Nacional (DPS → NFS-e) neste repositório |
 
@@ -106,7 +107,19 @@ P0 relativo à base: `POST /nfse`, `GET /nfse/{chaveAcesso}`, `GET|HEAD /dps/{id
 
 Fronteira: Vitrine ownership de auth user-facing + captcha. Sync/Nota worker não autentica o humano — recebe `account_id` já autenticado e verificado e aí usa service role no fio SEFIN / Storage. Cliente browser = anon/publishable key + JWT; qualquer outra chave é bug.
 
-## 4. Rejeição e retry
+## 4. Rate limiting
+
+Obrigatório **antes de publicar**. Distinto da cota (`quota_usage`): cota = teto mensal de notas; rate limit = proteção de abuso (rajada, credential stuffing, flood no form).
+
+| Superfície | Quem | Regra |
+|---|---|---|
+| Signup / form público | **Vitrine** (edge) | Throttle no edge (Cloudflare e/ou Edge Function). Sem isso o form `leads` não vai ao ar |
+| Auth login | **Vitrine** → Supabase Auth | Rate limit de login (Auth + edge). Sem auth paralela neste repo |
+| `POST` emissão | **Nota** / Sync | Rate limit **por `account_id`**, **além** do `Quota.assert`. Esgotar o burst ≠ esgotar `notes_quota` |
+
+Não publicar a 1ª fatia sem os três. Publicar **sem Dinheiro** (billing) é ok; sem estes limits não.
+
+## 5. Rejeição e retry
 
 Fluxo pós-`POST /nfse`:
 
@@ -120,7 +133,7 @@ Reconciliação obrigatória após POST incerto: `HEAD /dps/{id}` (existe?) e/ou
 
 Id DPS (45): IBGE(7) + tpInscr(1) + IEFed(14) + série(5) + nDPS(15).
 
-## 5. Fora de escopo (explícito)
+## 6. Fora de escopo (explícito)
 
 | Item | Onde vive / por quê |
 |---|---|
@@ -136,7 +149,7 @@ Id DPS (45): IBGE(7) + tpInscr(1) + IEFed(14) + série(5) + nDPS(15).
 | IBS/CBS (`IBSCBS` / RTC) como regra bloqueante | DTO extensível; não bloquear P0 |
 | UI emissor, marketing de planos | Fora |
 
-## 6. Consequências e próximos spikes
+## 7. Consequências e próximos spikes
 
 **Consequências**
 
@@ -145,6 +158,7 @@ Id DPS (45): IBGE(7) + tpInscr(1) + IEFed(14) + série(5) + nDPS(15).
 - Troca de ambiente errada em produção emite NFS-e real — o default **é** `ProducaoRestrita`.
 - Timeout sem `GET|HEAD /dps/{id}` pode duplicar autorização.
 - Service role ou PFX no browser é violação deste ADR; emissão operacional sem e-mail verificado idem.
+- Publicar sem rate limit no form, no login e no `POST` emissão (por account) viola §4. Cota esgotada ≠ burst de requests. Publicar sem Dinheiro é ok.
 
 **Spikes seguintes (sem alargar este ADR)**
 

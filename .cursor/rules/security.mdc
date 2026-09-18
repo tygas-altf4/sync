@@ -1,0 +1,15 @@
+---
+description: Segurança day-1 — RLS, secrets, vault A1, service role só no servidor
+alwaysApply: true
+---
+
+# Segurança (SyncNFe)
+
+Lei: `docs/ADR-001-arquitetura-nfse.md` §3.
+
+- Auth = Supabase Auth (Vitrine). Sem auth paralela. E-mail verificado antes de emitir / cert / cota / worker.
+- Captcha (Turnstile ou hCaptcha) no signup e form público — Vitrine; recusar fluxo sem captcha.
+- RLS em `accounts`, `establishments`, `quota_usage`, `nfse_docs`, `subscriptions` + buckets. Browser = JWT + anon/publishable key.
+- `SUPABASE_SERVICE_ROLE_KEY` **somente servidor** (Nota worker). Nunca client, `.env` de front, bundle, `NEXT_PUBLIC_*`.
+- Cert A1: só `establishments.certificate_vault_ref` + Storage `certificates` (service-role). Nunca PFX/PEM em coluna, log ou JS.
+- Zero secrets no frontend.
