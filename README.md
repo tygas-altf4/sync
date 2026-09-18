@@ -22,7 +22,7 @@ Agentes Cursor: [AGENTS.md](AGENTS.md).
 
 ## Hotsite + CRM (Vitrine) — DRAFT
 
-Landing de captura em `web/` + API em `src/vitrine/`. **Não é publicação em produção.**
+Landing de captura em `web/` + `src/vitrine/` — **dono Vitrine**, draft neste repo. **Não é publicação.** Lei: [AGENTS.md](AGENTS.md) + [ADR-001](docs/ADR-001-arquitetura-nfse.md). Sem API fora de `001_schema_minimo.sql`.
 
 | | |
 |---|---|

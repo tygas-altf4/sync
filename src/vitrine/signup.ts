@@ -75,7 +75,7 @@ export async function provisionFreeAccount(
     const event = await resolved.store.insertCrmEvent({
       lead_id: lead.id,
       account_id: account.id,
-      type: 'stage_change',
+      event_type: 'stage_change',
       payload: { from: 'novo', to: 'teste' },
     });
 

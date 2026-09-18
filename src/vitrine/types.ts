@@ -45,8 +45,6 @@ export type LeadInsert = {
 export type LeadRow = LeadInsert & {
   id: string;
   created_at: string;
-  updated_at: string;
-  upgrade_handoff_at: string | null;
 };
 
 export type AccountInsert = {
@@ -90,7 +88,7 @@ export type UpgradeHandoffPayload = {
 export type CrmEventInsert = {
   lead_id: string | null;
   account_id: string | null;
-  type: CrmEventType;
+  event_type: CrmEventType;
   payload: Record<string, unknown>;
 };
 

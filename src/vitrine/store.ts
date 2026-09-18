@@ -1,6 +1,7 @@
 /**
  * Store da Vitrine. Stub em memória sem env; com env usa o cliente
- * compartilhado `createSupabaseClient` (#5) — sem fetch REST paralelo.
+ * compartilhado `createSupabaseClient` (#5). Só tabelas do schema 001 —
+ * sem coluna inventada, sem fetch REST paralelo.
  */
 import {
   createSupabaseClient,
@@ -55,8 +56,6 @@ function toLeadRow(
     ...row,
     id: extras.id,
     created_at: extras.created_at,
-    updated_at: extras.created_at,
-    upgrade_handoff_at: null,
   };
 }
 
@@ -81,7 +80,7 @@ export class MemoryVitrineStore implements VitrineStore {
     if (current === undefined) {
       throw new Error(`lead não encontrado: ${id}`);
     }
-    const next: LeadRow = { ...current, ...patch, id, updated_at: nowIso() };
+    const next: LeadRow = { ...current, ...patch, id };
     this.leads.set(id, next);
     return next;
   }
@@ -137,8 +136,6 @@ function fromDbLead(row: {
     account_id: row.account_id,
     id: row.id,
     created_at: row.created_at,
-    updated_at: row.created_at,
-    upgrade_handoff_at: null,
   };
 }
 
@@ -220,7 +217,7 @@ export class SupabaseVitrineStore implements VitrineStore {
     const saved = await insertCrmEvent(this.client, {
       lead_id: row.lead_id,
       account_id: row.account_id,
-      event_type: row.type,
+      event_type: row.event_type,
       payload: row.payload,
     });
     return {
@@ -228,7 +225,7 @@ export class SupabaseVitrineStore implements VitrineStore {
       created_at: saved.created_at,
       lead_id: saved.lead_id,
       account_id: saved.account_id,
-      type: saved.event_type as CrmEventRow['type'],
+      event_type: saved.event_type as CrmEventRow['event_type'],
       payload: saved.payload,
     };
   }

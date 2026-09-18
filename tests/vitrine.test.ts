@@ -46,6 +46,18 @@ describe('landing copy', () => {
   });
 });
 
+describe('schema compartilhado', () => {
+  it('Vitrine não inventa coluna fora de 001_schema_minimo', () => {
+    const sql = readFileSync(path.join(ROOT, 'supabase/migrations/001_schema_minimo.sql'), 'utf8');
+    const types = readFileSync(path.join(ROOT, 'src/vitrine/types.ts'), 'utf8');
+    assert.match(sql, /create table if not exists public.leads/);
+    assert.match(sql, /event_type text not null/);
+    assert.doesNotMatch(sql, /upgrade_handoff_at/);
+    assert.doesNotMatch(types, /upgrade_handoff_at/);
+    assert.match(types, /event_type: CrmEventType/);
+  });
+});
+
 describe('planos (display)', () => {
   it('usa cotas 50/150/1000/4000 e preços 0/89/249/549', () => {
     assert.deepEqual(
@@ -142,7 +154,7 @@ describe('CRM + handoff', () => {
     assert.equal(signed.account.owner_user_id, 'user-1');
     assert.equal(signed.quota.notes_used, 0);
     assert.equal(signed.quota.notes_quota, 50);
-    assert.equal(signed.event.type, 'stage_change');
+    assert.equal(signed.event.event_type, 'stage_change');
     assert.notEqual(signed.lead.stage, 'ativo');
   });
 
@@ -182,7 +194,7 @@ describe('CRM + handoff', () => {
     const result = await writeUpgradeHandoff(payload, { store, mode: 'stub' });
     assert.equal(result.ok, true);
     assert.equal(result.stub, true);
-    assert.equal(result.event.type, 'upgrade_handoff');
+    assert.equal(result.event.event_type, 'upgrade_handoff');
     assert.equal(result.payload.plan_interest, 'starter89');
   });
 });
@@ -248,9 +260,9 @@ describe('HTTP vitrine', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ plan_interest: 'pro249', source: 'hotsite_plan_cta' }),
     });
-    const body = (await res.json()) as { ok: boolean; type: string; payload: { plan_interest: string } };
+    const body = (await res.json()) as { ok: boolean; event_type: string; payload: { plan_interest: string } };
     assert.equal(res.status, 200);
-    assert.equal(body.type, 'upgrade_handoff');
+    assert.equal(body.event_type, 'upgrade_handoff');
     assert.equal(body.payload.plan_interest, 'pro249');
   });
 });

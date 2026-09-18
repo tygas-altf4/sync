@@ -1,3 +1,8 @@
+/**
+ * HTTP da Vitrine (draft). Fachada de GoTrue + tabelas do schema 001
+ * (`leads`, `accounts`, `quota_usage`, `crm_events`). Sem API fiscal paralela,
+ * sem `subscriptions`/`price_brl` (Dinheiro), sem SEFIN.
+ */
 import {
   createServer,
   type IncomingMessage,
@@ -423,7 +428,7 @@ async function handleRequest(
         ok: true,
         stub: result.stub,
         event_id: result.event.id,
-        type: result.event.type,
+        event_type: result.event.event_type,
         payload: result.payload,
       });
       return;

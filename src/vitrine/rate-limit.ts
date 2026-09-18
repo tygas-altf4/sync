@@ -9,6 +9,10 @@ import type { IncomingHttpHeaders } from 'node:http';
  * Sem UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN usamos memória do
  * processo (`mode=memory`, stub=true). Serve pra draft/local; não compartilha
  * entre instâncias. Com Upstash, o contador é compartilhado.
+ *
+ * ADR §4 pede throttle de **edge** (Cloudflare / Edge Function) antes de
+ * publicar o form. Este limiter é o stand-in no processo Node — mesma regra
+ * (IP/e-mail), sem inventar outro contrato.
  */
 export type RateLimitRoute = 'leads' | 'signup' | 'login' | 'mfa';
 

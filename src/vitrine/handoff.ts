@@ -103,19 +103,9 @@ export async function writeUpgradeHandoff(
   const event = await resolved.store.insertCrmEvent({
     lead_id: payload.lead_id,
     account_id: payload.account_id,
-    type: 'upgrade_handoff',
+    event_type: 'upgrade_handoff',
     payload,
   });
-
-  if (payload.lead_id) {
-    try {
-      await resolved.store.updateLead(payload.lead_id, {
-        upgrade_handoff_at: event.created_at,
-      });
-    } catch {
-      /* lead pode ainda não existir (CTA de plano sem form) */
-    }
-  }
 
   return { ok: true, stub: resolved.mode === 'stub', event, payload };
 }
