@@ -76,7 +76,7 @@ URL pública de rascunho em `*.workers.dev` — **não** aponta `sync.plvria.com
 npx --yes wrangler@latest deploy --temporary
 ```
 
-`--temporary` cria conta Cloudflare de preview (claim em 60 min). Sem `wrangler.toml` de custom domain. Worker: `workers/vitrine.ts` + assets `web/`.
+`--temporary` cria conta Cloudflare de preview. **Claim obrigatório em 60 min** — sem claim o Worker some e a URL passa a responder 500. Abrir o link não basta: entrar/criar conta Cloudflare e completar o fluxo. Sem `wrangler.toml` de custom domain. Worker: `workers/vitrine.ts` + assets `web/`.
 
 **Env do preview** (`wrangler.jsonc` `vars` — stubs para o app bootar):
 

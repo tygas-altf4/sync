@@ -11,7 +11,12 @@ function setStatus(message, kind) {
   statusEl.className = `form-status ${kind}`;
 }
 
-const config = await loadPublicConfig();
+let config;
+try {
+  config = await loadPublicConfig();
+} catch {
+  config = { turnstileMode: 'stub' };
+}
 mountCaptcha(
   document.getElementById('signup-captcha'),
   document.getElementById('signup_turnstile'),

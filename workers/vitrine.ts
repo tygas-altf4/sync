@@ -1,15 +1,17 @@
 /**
  * Worker de preview da Vitrine. Só `workers.dev` — sem DNS de
- * sync.plvria.com.br e sem publish de produção. Mesmas rotas `/api` do
- * `npm run web`; sem SUPABASE_URL/service role o store e o Auth ficam stub.
+ * sync.plvria.com.br e sem publish de produção.
+ *
+ * GET de HTML/CSS/JS NÃO inicializa o runtime (Auth/store/node:crypto).
+ * Assim um crash na API não devolve JSON 500 no lugar da landing — o que
+ * no Safari iOS (dark mode) vira tela preta.
  */
-import { createVitrineRuntime, handleVitrineApi, LEAD_ERROR_MESSAGE, MAX_BODY_BYTES } from '../src/vitrine/api.js';
 import { PAGE_MAP } from '../src/vitrine/pages.js';
 import { clientIp } from '../src/vitrine/rate-limit.js';
 import { sessionClearCookieValue, sessionSetCookieValue } from '../src/vitrine/session.js';
 
 export type PreviewEnv = {
-  ASSETS: { fetch: (request: Request) => Promise<Response> };
+  ASSETS: { fetch: (input: Request) => Promise<Response> };
   SYNCNFE_AMBIENTE?: string;
   SYNCNFE_PUBLIC_HOST?: string;
   SUPABASE_URL?: string;
@@ -42,26 +44,32 @@ const JSON_HEADERS = {
   'X-Content-Type-Options': 'nosniff',
 };
 
-let runtime: ReturnType<typeof createVitrineRuntime> | null = null;
+const LIGHT_HTML_HEADERS = {
+  'Content-Type': 'text/html; charset=utf-8',
+  'X-Robots-Tag': 'noindex, nofollow',
+  'X-Content-Type-Options': 'nosniff',
+};
 
-function applyPreviewEnv(env: PreviewEnv): void {
+/** Fallback se o binding ASSETS falhar — canvas claro, sem depender de CSS. */
+const LIGHT_ERROR_HTML =
+  '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light only"><style>html,body{background:#f3efe6;color:#1b1916;margin:0;padding:24px;font-family:sans-serif}</style><title>Plvria Sync</title></head><body><p>Não foi possível carregar a página agora.</p></body></html>';
+
+let runtime: unknown = null;
+
+function bindingsToEnv(env: PreviewEnv): Record<string, string | undefined> {
+  const out: Record<string, string> = {};
   for (const key of ENV_KEYS) {
     const value = env[key];
-    if (typeof value === 'string') {
-      process.env[key] = value;
+    if (typeof value === 'string' && value !== '') {
+      out[key] = value;
     }
   }
+  return out;
 }
 
-function getRuntime(env: PreviewEnv): ReturnType<typeof createVitrineRuntime> {
-  applyPreviewEnv(env);
-  runtime ??= createVitrineRuntime();
-  return runtime;
-}
-
-async function readJsonBody(request: Request): Promise<unknown> {
+async function readJsonBody(request: Request, maxBytes: number): Promise<unknown> {
   const raw = await request.text();
-  if (raw.length > MAX_BODY_BYTES) {
+  if (raw.length > maxBytes) {
     throw new Error('body_too_large');
   }
   if (raw.trim() === '') {
@@ -92,15 +100,17 @@ async function serveAsset(request: Request, env: PreviewEnv, pathname: string): 
     assetUrl.pathname = `/${mapped}`;
     assetUrl.search = '';
   }
-  const response = await env.ASSETS.fetch(assetUrl);
+  const assetRequest = new Request(assetUrl.toString(), {
+    method: 'GET',
+    headers: request.headers,
+    redirect: 'manual',
+  });
+  const response = await env.ASSETS.fetch(assetRequest);
   if (response.status === 404) {
-    return new Response('<!doctype html><title>404</title><p>Não encontrado.</p>', {
-      status: 404,
-      headers: {
-        'Content-Type': 'text/html; charset=utf-8',
-        'X-Robots-Tag': 'noindex, nofollow',
-      },
-    });
+    return new Response(
+      '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="color-scheme" content="light only"><style>html,body{background:#f3efe6;color:#1b1916}</style><title>404</title></head><body><p>Não encontrado.</p></body></html>',
+      { status: 404, headers: LIGHT_HTML_HEADERS },
+    );
   }
   const headers = new Headers(response.headers);
   headers.set('X-Robots-Tag', 'noindex, nofollow');
@@ -112,23 +122,34 @@ export default {
   async fetch(request: Request, env: PreviewEnv): Promise<Response> {
     const url = new URL(request.url);
     const method = request.method;
-    const vitrine = getRuntime(env);
+
+    if ((method === 'GET' || method === 'HEAD') && !url.pathname.startsWith('/api/')) {
+      try {
+        return await serveAsset(request, env, url.pathname);
+      } catch (error) {
+        console.error('[vitrine] asset', error);
+        return new Response(LIGHT_ERROR_HTML, { status: 500, headers: LIGHT_HTML_HEADERS });
+      }
+    }
 
     try {
-      const api = await handleVitrineApi(
+      const api = await import('../src/vitrine/api.js');
+      runtime ??= api.createVitrineRuntime({ env: bindingsToEnv(env) });
+      const vitrine = runtime as ReturnType<typeof api.createVitrineRuntime>;
+      const handled = await api.handleVitrineApi(
         {
           method,
           pathname: url.pathname,
           cookieHeader: request.headers.get('cookie'),
           ip: clientIp(request.headers, request.headers.get('cf-connecting-ip') ?? undefined),
-          readJsonBody: () => readJsonBody(request),
+          readJsonBody: () => readJsonBody(request, api.MAX_BODY_BYTES),
         },
         vitrine,
       );
-      if (api !== null) {
-        return jsonResponse(api.status, api.body, {
-          extraHeaders: api.extraHeaders,
-          sessionToken: api.sessionToken,
+      if (handled !== null) {
+        return jsonResponse(handled.status, handled.body, {
+          extraHeaders: handled.extraHeaders,
+          sessionToken: handled.sessionToken,
         });
       }
 
@@ -142,6 +163,9 @@ export default {
         return jsonResponse(400, { ok: false, error: 'Pedido inválido.' });
       }
       console.error('[vitrine] worker', error);
+      const { LEAD_ERROR_MESSAGE } = await import('../src/vitrine/api.js').catch(() => ({
+        LEAD_ERROR_MESSAGE: 'Não deu pra salvar agora. Tenta de novo em instantes.',
+      }));
       return jsonResponse(500, { ok: false, error: LEAD_ERROR_MESSAGE });
     }
   },

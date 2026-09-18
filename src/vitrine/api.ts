@@ -7,7 +7,7 @@ import { writeUpgradeHandoff } from './handoff.js';
 import { provisionFreeAccount } from './signup.js';
 import { createVitrineStore, type VitrineStore } from './store.js';
 import { createAuthService, mfaRequired, normalizeEmail, type AuthService } from './auth.js';
-import { createTurnstileVerifier, type CaptchaVerifier } from './captcha.js';
+import { createTurnstileVerifier, loadTurnstileSecret, type CaptchaVerifier } from './captcha.js';
 import { assertNoSecrets, loadPublicConfig, type PublicVitrineConfig } from './public-config.js';
 import {
   createRateLimiter,
@@ -35,6 +35,8 @@ export type VitrineHttpOptions = {
   captcha?: CaptchaVerifier;
   publicConfig?: PublicVitrineConfig;
   rateLimiter?: RateLimiter;
+  /** Bindings do Worker; no Node cai em `process.env`. */
+  env?: NodeJS.ProcessEnv;
 };
 
 export type VitrineApiRequest = {
@@ -54,17 +56,18 @@ export type VitrineApiResponse = {
 };
 
 export function createVitrineRuntime(options: VitrineHttpOptions = {}): VitrineRuntime {
+  const env = options.env ?? process.env;
   const resolvedStore =
     options.store !== undefined
       ? { store: options.store, mode: options.mode ?? 'stub' }
-      : createVitrineStore();
+      : createVitrineStore(env);
   return {
     store: resolvedStore.store,
     mode: resolvedStore.mode,
-    auth: options.auth ?? createAuthService(),
-    captcha: options.captcha ?? createTurnstileVerifier(),
-    publicConfig: options.publicConfig ?? loadPublicConfig(),
-    rateLimiter: options.rateLimiter ?? createRateLimiter(),
+    auth: options.auth ?? createAuthService(env),
+    captcha: options.captcha ?? createTurnstileVerifier({ secretKey: loadTurnstileSecret(env) }),
+    publicConfig: options.publicConfig ?? loadPublicConfig(env),
+    rateLimiter: options.rateLimiter ?? createRateLimiter(env),
   };
 }
 
