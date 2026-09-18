@@ -12,6 +12,10 @@ Núcleo TypeScript da **NFS-e Nacional** (SEFIN) da Plvria.
 
 Este repositório é o **scaffold** do cliente SEFIN. **Não emite NFS-e real ainda** (sem mTLS / A1 neste PR).
 
+## Arquitetura
+
+Decisões não negociáveis: [ADR-001 — Arquitetura NFS-e](docs/ADR-001-arquitetura-nfse.md).
+
 ---
 
 ## Como rodar
