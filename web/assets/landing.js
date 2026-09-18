@@ -1,3 +1,5 @@
+import { captchaToken, loadPublicConfig, mountCaptcha } from './captcha.js';
+
 const form = document.getElementById('lead-form');
 const statusEl = document.getElementById('form-status');
 const cnpjInput = document.getElementById('cnpj');
@@ -5,6 +7,9 @@ const cnpjPendente = document.getElementById('cnpj_pendente');
 const planInterest = document.getElementById('plan_interest');
 const postLead = document.getElementById('post-lead');
 const signupBtn = document.getElementById('btn-signup');
+
+const publicConfig = await loadPublicConfig();
+mountCaptcha(document.getElementById('lead-captcha'), document.getElementById('turnstile_token'), publicConfig);
 
 const params = new URLSearchParams(window.location.search);
 for (const key of ['utm_source', 'utm_medium', 'utm_campaign']) {
@@ -70,6 +75,7 @@ function payloadFromForm() {
     utm_campaign: data.get('utm_campaign'),
     plan_interest: data.get('plan_interest'),
     origem: 'hotsite',
+    turnstile_token: captchaToken(form),
   };
 }
 
@@ -91,30 +97,13 @@ form?.addEventListener('submit', async (event) => {
     sessionStorage.setItem('sync_lead_id', result.lead_id);
     setStatus(result.message, 'ok');
     postLead.hidden = false;
-  } catch {
-    setStatus('Não deu pra salvar agora. Tenta de novo em instantes.', 'err');
-  }
-});
-
-signupBtn?.addEventListener('click', async () => {
-  const leadId = sessionStorage.getItem('sync_lead_id');
-  if (!leadId) return;
-  setStatus('Liberando cota free…', '');
-  try {
-    const response = await fetch('/api/signup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ lead_id: leadId }),
-    });
-    const result = await response.json();
-    if (!response.ok || !result.ok) {
-      setStatus(result.error ?? 'Não deu pra salvar agora. Tenta de novo em instantes.', 'err');
-      return;
-    }
-    setStatus(
-      `Cota free no ar: ${result.notes_used}/${result.notes_quota} em ${result.period_yyyymm}. Sem cartão nesta etapa.`,
-      'ok',
-    );
+    const email = form.querySelector('#email')?.value ?? '';
+    const nome = form.querySelector('#nome')?.value ?? '';
+    const next = new URL('/entrar', window.location.origin);
+    next.searchParams.set('lead_id', result.lead_id);
+    if (email) next.searchParams.set('email', email);
+    if (nome) next.searchParams.set('nome', nome);
+    if (signupBtn) signupBtn.href = `${next.pathname}${next.search}`;
   } catch {
     setStatus('Não deu pra salvar agora. Tenta de novo em instantes.', 'err');
   }

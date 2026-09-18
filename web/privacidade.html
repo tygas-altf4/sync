@@ -22,6 +22,7 @@
           <span class="brand-mark">Plvria Sync</span>
           <span class="brand-sub">SyncNFe</span>
         </a>
+        <a href="/entrar">Entrar</a>
         <a class="btn" href="/#comecar">Começar grátis</a>
       </div>
     </header>
@@ -35,7 +36,9 @@
       <p>
         O aceite LGPD grava o horário em <code>lgpd_at</code>. Não usamos pixels de ads
         nesta versão. Dados ficam no schema compartilhado (tabela <code>leads</code>),
-        inseridos com service role — o cliente anônimo não lista leads.
+        inseridos no servidor com service role <strong>depois</strong> do captcha —
+        o cliente anônimo não lista nem insere leads (RLS). No browser só entram a
+        anon key e a site key do Turnstile.
       </p>
       <p>
         Host canônico: <a href="https://sync.plvria.com.br">sync.plvria.com.br</a>.

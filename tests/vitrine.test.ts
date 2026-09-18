@@ -118,12 +118,26 @@ describe('CRM + handoff', () => {
     assert.equal(captured.lead.stage, 'novo');
     assert.match(captured.message, /Lead criado/);
 
-    const signed = await provisionFreeAccount({ lead_id: captured.lead.id }, { store, mode: 'stub' });
+    const signed = await provisionFreeAccount(
+      { lead_id: captured.lead.id },
+      {
+        store,
+        mode: 'stub',
+        user: {
+          id: 'user-1',
+          email: captured.lead.email,
+          nome: captured.lead.nome,
+          lead_id: captured.lead.id,
+          email_confirmed: true,
+        },
+      },
+    );
     assert.equal(signed.ok, true);
     if (!signed.ok) return;
     assert.equal(signed.lead.stage, 'teste');
     assert.equal(signed.account.plan_code, 'free50');
     assert.equal(signed.account.plan_status, 'trialing');
+    assert.equal(signed.account.owner_user_id, 'user-1');
     assert.equal(signed.quota.notes_used, 0);
     assert.equal(signed.quota.notes_quota, 50);
     assert.equal(signed.event.type, 'stage_change');

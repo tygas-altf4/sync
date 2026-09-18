@@ -24,8 +24,9 @@ Landing de captura em `web/` + API em `src/vitrine/`. **Não é publicação em 
 | Público | empresa (ME/Simples/serviço) e contador — **não escolas**, sem cross-sell escolar |
 | CTA primário | Começar grátis |
 | Planos pagos | Falar com upgrade (handoff; **sem cobrança** nesta UI) |
-| Form → | `leads` (`origem=hotsite`, `stage=novo`, `lgpd_at`) |
-| Signup stub → | `accounts` free50 + `quota_usage` + lead `teste` + `crm_events` `stage_change` |
+| Form → | captcha → `leads` (`origem=hotsite`, `stage=novo`, `lgpd_at`) |
+| Auth → | `/entrar` signup/login (Supabase Auth ou stub). Cookie httpOnly |
+| Onboarding → | só com e-mail **confirmado** → `accounts` free50 + `quota_usage` + lead `teste` |
 | Upgrade stub → | `crm_events` `upgrade_handoff` (payload do mapa Vitrine↔Supabase) |
 
 ```bash
@@ -35,11 +36,22 @@ npm run web
 
 **Env (não commitar segredos):**
 
-- `SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY` — só no servidor; anon **não** faz select em `leads`
-- `PORT` — opcional (padrão 3000)
+| Var | Onde | Uso |
+|---|---|---|
+| `SUPABASE_URL` | server + público via `/api/public-config` | projeto |
+| `SUPABASE_ANON_KEY` | server + público via `/api/public-config` | Auth (nunca select `leads`) |
+| `SUPABASE_SERVICE_ROLE_KEY` | **só servidor** | insert `leads` / `accounts` / `crm_events` depois do captcha |
+| `TURNSTILE_SITE_KEY` | público | widget Cloudflare Turnstile |
+| `TURNSTILE_SECRET_KEY` | **só servidor** | siteverify; se faltar, captcha **stuba** |
+| `PORT` | server | padrão 3000 |
 
-Sem URL/service role, `POST /api/leads`, `/api/signup` e `/api/upgrade-handoff` **stubam** (memória + log). Com as vars, inserem no schema compartilhado via PostgREST. Não inventar API fiscal paralela — SEFIN/DPS continua no núcleo (`src/sefin`, Nota Bot).
+Sem URL/service role, as rotas **stubam**. Sem chaves Turnstile, o captcha é checkbox de rascunho. Auth sem anon key usa usuários em memória (e-mail começa **não** confirmado).
+
+`GET /api/public-config` devolve só URL + anon + site key. Service role e secret do Turnstile **não** saem do processo Node.
+
+RLS esperado: `docs/rls-leads.md` — anon não select/insert `leads`.
+
+Não inventar API fiscal paralela — SEFIN/DPS continua no núcleo (`src/sefin`, Nota Bot).
 
 **Publicar** o hotsite **somente** depois do ok do **Dinheiro Bot** e do **Thiago**. DNS/Cloudflare de `sync` fica fora deste PR.
 
@@ -104,7 +116,7 @@ src/
 ├── quota/            # Quota — bloqueia se notes_used >= notes_quota
 ├── persistencia/     # Supabase: establishments, nfse_docs; só vault_ref
 ├── retry/            # RetryStore — 429 / 5xx / timeout + replay DPS
-├── vitrine/          # Hotsite DRAFT — leads / signup / handoff (sem SEFIN)
+├── vitrine/          # Hotsite DRAFT — leads / Auth / Turnstile / handoff (sem SEFIN)
 └── config/           # ProducaoRestrita | Producao + bases URL
 web/                  # Landing pt-BR + form (servido por `npm run web`)
 schemas/xsd/          # XSD oficiais (ainda não baixados)

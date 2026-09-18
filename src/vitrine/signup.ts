@@ -1,4 +1,5 @@
 import { currentPeriodYyyymm, PLAN_QUOTAS } from '../quota/Quota.js';
+import { ONBOARDING_VERIFY_MESSAGE, type AuthUser } from './auth.js';
 import { createVitrineStore, type StoreMode, type VitrineStore } from './store.js';
 import type { AccountRow, CrmEventRow, LeadRow, QuotaUsageRow } from './types.js';
 
@@ -17,16 +18,24 @@ export type SignupResult = {
 
 /**
  * Conta free50 + quota_usage do mês + lead `teste`.
- * Sem Supabase Auth neste draft (`owner_user_id` fica null).
- * Vitrine nunca marca `ativo`.
+ * Exige usuário Auth com e-mail verificado. Vitrine nunca marca `ativo`.
  */
 export async function provisionFreeAccount(
   input: SignupInput,
-  deps: { store?: VitrineStore; mode?: StoreMode } = {},
-): Promise<SignupResult | { ok: false; error: string }> {
-  const leadId = typeof input.lead_id === 'string' ? input.lead_id.trim() : '';
+  deps: { store?: VitrineStore; mode?: StoreMode; user?: AuthUser | null } = {},
+): Promise<SignupResult | { ok: false; error: string; status?: number }> {
+  const user = deps.user;
+  if (user == null) {
+    return { ok: false, error: 'Entre na conta antes de liberar a cota free.', status: 401 };
+  }
+  if (!user.email_confirmed) {
+    return { ok: false, error: ONBOARDING_VERIFY_MESSAGE, status: 403 };
+  }
+
+  const leadId =
+    (typeof input.lead_id === 'string' ? input.lead_id.trim() : '') || user.lead_id || '';
   if (leadId === '') {
-    return { ok: false, error: 'lead_id é obrigatório.' };
+    return { ok: false, error: 'lead_id é obrigatório.', status: 400 };
   }
 
   const resolved = deps.store
@@ -36,7 +45,10 @@ export async function provisionFreeAccount(
   try {
     const lead = await resolved.store.getLead(leadId);
     if (lead === null) {
-      return { ok: false, error: 'Lead não encontrado.' };
+      return { ok: false, error: 'Lead não encontrado.', status: 404 };
+    }
+    if (lead.email !== user.email) {
+      return { ok: false, error: 'Este lead não pertence à conta logada.', status: 403 };
     }
 
     const account = await resolved.store.insertAccount({
@@ -44,7 +56,7 @@ export async function provisionFreeAccount(
       plan_code: 'free50',
       plan_status: 'trialing',
       lead_id: lead.id,
-      owner_user_id: null,
+      owner_user_id: user.id,
     });
 
     const period = currentPeriodYyyymm();
@@ -70,6 +82,10 @@ export async function provisionFreeAccount(
     return { ok: true, stub: resolved.mode === 'stub', lead: updated, account, quota, event };
   } catch (error) {
     console.error('[vitrine] signup falhou', error);
-    return { ok: false, error: 'Não deu pra liberar a cota free agora. Tenta de novo em instantes.' };
+    return {
+      ok: false,
+      error: 'Não deu pra liberar a cota free agora. Tenta de novo em instantes.',
+      status: 500,
+    };
   }
 }

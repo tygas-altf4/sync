@@ -37,6 +37,7 @@
           <a class="hide-sm" href="#dor">Nov/2026</a>
           <a class="hide-sm" href="#como-funciona">Como funciona</a>
           <a class="hide-sm" href="#planos">Planos</a>
+          <a class="hide-sm" href="/entrar">Entrar</a>
           <a class="btn" href="#comecar">Começar grátis</a>
         </nav>
       </div>
@@ -268,10 +269,13 @@
                   conforme a <a href="/privacidade">Política de Privacidade</a>.
                 </span>
               </label>
+              <input type="hidden" name="turnstile_token" id="turnstile_token" />
+              <div id="lead-captcha" class="captcha-slot"></div>
               <button class="btn btn-forest" type="submit">Começar grátis</button>
               <p class="form-status" id="form-status" role="status" aria-live="polite"></p>
               <div id="post-lead" hidden>
-                <button class="btn-ghost" type="button" id="btn-signup">Continuar setup</button>
+                <a class="btn-ghost" id="btn-signup" href="/entrar">Criar conta</a>
+                <p class="micro">Confirme o e-mail depois. Sem verificação o onboarding não começa.</p>
               </div>
             </form>
           </div>

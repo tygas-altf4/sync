@@ -1,4 +1,10 @@
-import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
+import {
+  createServer,
+  type IncomingMessage,
+  type OutgoingHttpHeaders,
+  type Server,
+  type ServerResponse,
+} from 'node:http';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -6,6 +12,10 @@ import { captureLead, LEAD_ERROR_MESSAGE } from './leads.js';
 import { writeUpgradeHandoff } from './handoff.js';
 import { provisionFreeAccount } from './signup.js';
 import { createVitrineStore, type VitrineStore } from './store.js';
+import { createAuthService, normalizeEmail, type AuthService } from './auth.js';
+import { createTurnstileVerifier, type CaptchaVerifier } from './captcha.js';
+import { assertNoSecrets, loadPublicConfig, type PublicVitrineConfig } from './public-config.js';
+import { clearSessionCookie, readSessionToken, setSessionCookie } from './session.js';
 
 const MODULE_DIR = path.dirname(fileURLToPath(import.meta.url));
 export const WEB_ROOT = path.resolve(MODULE_DIR, '../../web');
@@ -26,16 +36,33 @@ export type VitrineHttpOptions = {
   store?: VitrineStore;
   mode?: 'supabase' | 'stub';
   webRoot?: string;
+  auth?: AuthService;
+  captcha?: CaptchaVerifier;
+  publicConfig?: PublicVitrineConfig;
 };
 
-function json(res: ServerResponse, status: number, body: unknown): void {
+type Runtime = {
+  store: VitrineStore;
+  mode: 'supabase' | 'stub';
+  auth: AuthService;
+  captcha: CaptchaVerifier;
+  publicConfig: PublicVitrineConfig;
+};
+
+function json(res: ServerResponse, status: number, body: unknown, extraHeaders: Record<string, string> = {}): void {
   const payload = JSON.stringify(body);
-  res.writeHead(status, {
+  const cookie = res.getHeader('Set-Cookie');
+  const headers: OutgoingHttpHeaders = {
     'Content-Type': 'application/json; charset=utf-8',
     'X-Robots-Tag': 'noindex, nofollow',
     'Cache-Control': 'no-store',
     'X-Content-Type-Options': 'nosniff',
-  });
+    ...extraHeaders,
+  };
+  if (cookie !== undefined) {
+    headers['Set-Cookie'] = cookie;
+  }
+  res.writeHead(status, headers);
   res.end(payload);
 }
 
@@ -85,6 +112,10 @@ async function serveStatic(res: ServerResponse, webRoot: string, urlPath: string
     '/privacidade.html': 'privacidade.html',
     '/termos': 'termos.html',
     '/termos.html': 'termos.html',
+    '/entrar': 'entrar.html',
+    '/entrar.html': 'entrar.html',
+    '/conta': 'conta.html',
+    '/conta.html': 'conta.html',
   };
   const mapped = pageMap[urlPath] ?? urlPath;
   const filePath = safeJoin(webRoot, mapped);
@@ -103,31 +134,134 @@ async function serveStatic(res: ServerResponse, webRoot: string, urlPath: string
 
 export function createVitrineServer(options: VitrineHttpOptions = {}): Server {
   const webRoot = options.webRoot ?? WEB_ROOT;
-  const resolved =
+  const resolvedStore =
     options.store !== undefined
       ? { store: options.store, mode: options.mode ?? 'stub' }
       : createVitrineStore();
+  const runtime: Runtime = {
+    store: resolvedStore.store,
+    mode: resolvedStore.mode,
+    auth: options.auth ?? createAuthService(),
+    captcha: options.captcha ?? createTurnstileVerifier(),
+    publicConfig: options.publicConfig ?? loadPublicConfig(),
+  };
 
   return createServer((req: IncomingMessage, res: ServerResponse) => {
-    void handleRequest(req, res, webRoot, resolved.store, resolved.mode);
+    void handleRequest(req, res, webRoot, runtime);
   });
+}
+
+function asRecord(body: unknown): Record<string, unknown> {
+  return body !== null && typeof body === 'object' ? (body as Record<string, unknown>) : {};
 }
 
 async function handleRequest(
   req: IncomingMessage,
   res: ServerResponse,
   webRoot: string,
-  store: VitrineStore,
-  mode: 'supabase' | 'stub',
+  runtime: Runtime,
 ): Promise<void> {
   const method = req.method ?? 'GET';
   const url = new URL(req.url ?? '/', 'http://127.0.0.1');
   const pathname = url.pathname;
 
   try {
+    if (method === 'GET' && pathname === '/api/public-config') {
+      const payload = runtime.publicConfig;
+      assertNoSecrets(payload);
+      json(res, 200, payload);
+      return;
+    }
+
+    if (method === 'GET' && pathname === '/api/auth/session') {
+      const token = readSessionToken(req);
+      const user = token ? await runtime.auth.getUser(token) : null;
+      json(res, 200, { ok: true, stub: runtime.auth.mode === 'stub', user });
+      return;
+    }
+
+    if (method === 'POST' && pathname === '/api/auth/signup') {
+      const body = asRecord(await readJsonBody(req));
+      const captcha = await runtime.captcha(body['turnstile_token']);
+      if (!captcha.ok) {
+        json(res, 400, { ok: false, error: captcha.error });
+        return;
+      }
+      const result = await runtime.auth.signUp({
+        email: normalizeEmail(body['email']),
+        password: typeof body['password'] === 'string' ? body['password'] : '',
+        nome: typeof body['nome'] === 'string' ? body['nome'] : null,
+        lead_id: typeof body['lead_id'] === 'string' ? body['lead_id'] : null,
+      });
+      if (!result.ok) {
+        json(res, result.status, { ok: false, error: result.error });
+        return;
+      }
+      setSessionCookie(res, result.session.access_token);
+      json(res, 200, {
+        ok: true,
+        stub: result.stub,
+        user: result.session.user,
+        email_confirmed: result.session.user.email_confirmed,
+      });
+      return;
+    }
+
+    if (method === 'POST' && pathname === '/api/auth/login') {
+      const body = asRecord(await readJsonBody(req));
+      const captcha = await runtime.captcha(body['turnstile_token']);
+      if (!captcha.ok) {
+        json(res, 400, { ok: false, error: captcha.error });
+        return;
+      }
+      const result = await runtime.auth.signIn({
+        email: normalizeEmail(body['email']),
+        password: typeof body['password'] === 'string' ? body['password'] : '',
+      });
+      if (!result.ok) {
+        json(res, result.status, { ok: false, error: result.error });
+        return;
+      }
+      setSessionCookie(res, result.session.access_token);
+      json(res, 200, {
+        ok: true,
+        stub: result.stub,
+        user: result.session.user,
+        email_confirmed: result.session.user.email_confirmed,
+      });
+      return;
+    }
+
+    if (method === 'POST' && pathname === '/api/auth/logout') {
+      clearSessionCookie(res);
+      json(res, 200, { ok: true });
+      return;
+    }
+
+    if (method === 'POST' && pathname === '/api/auth/confirm-email') {
+      const token = readSessionToken(req);
+      if (!token) {
+        json(res, 401, { ok: false, error: 'Entre na conta para confirmar o e-mail.' });
+        return;
+      }
+      const result = await runtime.auth.confirmEmail(token);
+      if (!result.ok) {
+        json(res, result.status, { ok: false, error: result.error });
+        return;
+      }
+      setSessionCookie(res, result.session.access_token);
+      json(res, 200, { ok: true, stub: result.stub, user: result.session.user });
+      return;
+    }
+
     if (method === 'POST' && pathname === '/api/leads') {
-      const body = (await readJsonBody(req)) as Record<string, unknown>;
-      const result = await captureLead(body, { store, mode });
+      const body = asRecord(await readJsonBody(req));
+      const captcha = await runtime.captcha(body['turnstile_token']);
+      if (!captcha.ok) {
+        json(res, 400, { ok: false, error: captcha.error });
+        return;
+      }
+      const result = await captureLead(body, { store: runtime.store, mode: runtime.mode });
       if (!result.ok) {
         json(res, 400, { ok: false, error: result.error });
         return;
@@ -139,15 +273,22 @@ async function handleRequest(
         lead_id: result.lead.id,
         stage: result.lead.stage,
         plan_interest: result.plan_interest,
+        next: '/entrar',
       });
       return;
     }
 
     if (method === 'POST' && pathname === '/api/signup') {
-      const body = (await readJsonBody(req)) as Record<string, unknown>;
-      const result = await provisionFreeAccount(body, { store, mode });
+      const body = asRecord(await readJsonBody(req));
+      const token = readSessionToken(req);
+      const user = token ? await runtime.auth.getUser(token) : null;
+      const result = await provisionFreeAccount(body, {
+        store: runtime.store,
+        mode: runtime.mode,
+        user,
+      });
       if (!result.ok) {
-        json(res, 400, { ok: false, error: result.error });
+        json(res, result.status ?? 400, { ok: false, error: result.error });
         return;
       }
       json(res, 200, {
@@ -157,6 +298,7 @@ async function handleRequest(
         account_id: result.account.id,
         stage: result.lead.stage,
         plan_code: result.account.plan_code,
+        owner_user_id: result.account.owner_user_id,
         notes_used: result.quota.notes_used,
         notes_quota: result.quota.notes_quota,
         period_yyyymm: result.quota.period_yyyymm,
@@ -165,8 +307,8 @@ async function handleRequest(
     }
 
     if (method === 'POST' && pathname === '/api/upgrade-handoff') {
-      const body = (await readJsonBody(req)) as Record<string, unknown>;
-      const result = await writeUpgradeHandoff(body, { store, mode });
+      const body = asRecord(await readJsonBody(req));
+      const result = await writeUpgradeHandoff(body, { store: runtime.store, mode: runtime.mode });
       json(res, 200, {
         ok: true,
         stub: result.stub,

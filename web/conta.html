@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Conta — Plvria Sync</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="canonical" href="https://sync.plvria.com.br/conta" />
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/assets/landing.css" />
+  </head>
+  <body>
+    <div class="draft-banner">
+      Rascunho — onboarding só depois do e-mail verificado.
+    </div>
+    <header class="site-header">
+      <div class="wrap">
+        <a class="brand" href="/">
+          <span class="brand-mark">Plvria Sync</span>
+          <span class="brand-sub">SyncNFe</span>
+        </a>
+        <nav class="nav">
+          <a href="/entrar">Entrar</a>
+          <button class="btn-ghost" type="button" id="btn-logout">Sair</button>
+        </nav>
+      </div>
+    </header>
+    <main class="auth-page wrap">
+      <p class="eyebrow">Onboarding</p>
+      <h1>Sua cota free</h1>
+      <p class="lede" id="conta-copy">
+        Confirme o e-mail antes de continuar. Sem verificação a conta não está pronta pro
+        onboarding.
+      </p>
+      <div class="auth-card" id="conta-panel">
+        <p class="form-status" id="conta-status" role="status">Carregando sessão…</p>
+        <div id="unverified" hidden>
+          <p>Enviamos (ou vamos enviar) um e-mail de confirmação. Abra o link e volte aqui.</p>
+          <button class="btn" type="button" id="btn-confirm-stub" hidden>
+            Simular confirmação (só modo stub)
+          </button>
+        </div>
+        <div id="verified" hidden>
+          <p>E-mail confirmado. Pode liberar a cota Free50 — sem cartão nesta etapa.</p>
+          <button class="btn btn-forest" type="button" id="btn-provision">Liberar cota free</button>
+        </div>
+        <div id="guest" hidden>
+          <p>Nenhuma sessão. <a href="/entrar">Entre ou crie a conta</a>.</p>
+        </div>
+      </div>
+    </main>
+    <script src="/assets/conta.js" type="module"></script>
+  </body>
+</html>
