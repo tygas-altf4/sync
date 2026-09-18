@@ -16,7 +16,8 @@
     "start": "tsx src/vitrine/server.ts",
     "web": "tsx src/vitrine/server.ts",
     "dev:web": "tsx watch src/vitrine/server.ts",
-    "preview:cf": "npx --yes wrangler@latest deploy --temporary"
+    "preview:cf": "npx --yes wrangler@latest deploy --temporary",
+    "preview:cf:named": "npx --yes wrangler@latest deploy"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
