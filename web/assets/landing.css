@@ -552,8 +552,18 @@ input:disabled {
 .footer-grid {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
   gap: 16px;
   flex-wrap: wrap;
+}
+
+.footer-grid > div:first-child {
+  flex: 1 1 280px;
+  max-width: 640px;
+}
+
+.footer-grid > div:last-child {
+  flex: 0 0 auto;
 }
 
 .auth-card-wide {
@@ -562,6 +572,10 @@ input:disabled {
 
 .site-footer a {
   margin-right: 14px;
+}
+
+.site-footer .micro a {
+  margin-right: 0;
 }
 
 .footer-email {
