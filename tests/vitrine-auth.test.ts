@@ -97,6 +97,8 @@ describe('e-mail verification gate', () => {
           nome: lead.nome,
           lead_id: lead.id,
           email_confirmed: false,
+          mfa_enrolled: false,
+          aal: 'aal1',
         },
       },
     );

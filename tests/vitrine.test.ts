@@ -129,6 +129,8 @@ describe('CRM + handoff', () => {
           nome: captured.lead.nome,
           lead_id: captured.lead.id,
           email_confirmed: true,
+          mfa_enrolled: false,
+          aal: 'aal1',
         },
       },
     );
@@ -213,7 +215,9 @@ describe('HTTP vitrine', () => {
     assert.match(res.headers.get('x-robots-tag') ?? '', /noindex/);
     const cadastro = await fetch(`${base}/cadastro`);
     assert.equal(cadastro.status, 200);
-    assert.match(await cadastro.text(), /Criar conta SyncNFe/);
+    const cadastroHtml = await cadastro.text();
+    assert.match(cadastroHtml, /Criar conta SyncNFe/);
+    assert.match(cadastroHtml, /2FA \(TOTP\)/);
     const entrar = await fetch(`${base}/entrar`);
     assert.equal(entrar.status, 200);
   });

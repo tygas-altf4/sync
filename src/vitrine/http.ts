@@ -12,7 +12,7 @@ import { captureLead, LEAD_ERROR_MESSAGE } from './leads.js';
 import { writeUpgradeHandoff } from './handoff.js';
 import { provisionFreeAccount } from './signup.js';
 import { createVitrineStore, type VitrineStore } from './store.js';
-import { createAuthService, normalizeEmail, type AuthService } from './auth.js';
+import { createAuthService, mfaRequired, normalizeEmail, type AuthService } from './auth.js';
 import { createTurnstileVerifier, type CaptchaVerifier } from './captcha.js';
 import { assertNoSecrets, loadPublicConfig, type PublicVitrineConfig } from './public-config.js';
 import { createRateLimiter, clientIp, RATE_LIMIT_MESSAGE, type RateLimiter, type RateLimitRoute } from './rate-limit.js';
@@ -209,7 +209,14 @@ async function handleRequest(
     if (method === 'GET' && pathname === '/api/auth/session') {
       const token = readSessionToken(req);
       const user = token ? await runtime.auth.getUser(token) : null;
-      json(res, 200, { ok: true, stub: runtime.auth.mode === 'stub', user });
+      json(res, 200, {
+        ok: true,
+        stub: runtime.auth.mode === 'stub',
+        user,
+        mfa_required: mfaRequired(user),
+        mfa_enrolled: user?.mfa_enrolled ?? false,
+        aal: user?.aal ?? null,
+      });
       return;
     }
 
@@ -239,6 +246,8 @@ async function handleRequest(
         stub: result.stub,
         user: result.session.user,
         email_confirmed: result.session.user.email_confirmed,
+        mfa_required: mfaRequired(result.session.user),
+        aal: result.session.user.aal,
       });
       return;
     }
@@ -267,6 +276,8 @@ async function handleRequest(
         stub: result.stub,
         user: result.session.user,
         email_confirmed: result.session.user.email_confirmed,
+        mfa_required: mfaRequired(result.session.user),
+        aal: result.session.user.aal,
       });
       return;
     }
@@ -290,6 +301,63 @@ async function handleRequest(
       }
       setSessionCookie(res, result.session.access_token);
       json(res, 200, { ok: true, stub: result.stub, user: result.session.user });
+      return;
+    }
+
+    if (method === 'POST' && pathname === '/api/auth/mfa/enroll') {
+      const token = readSessionToken(req);
+      const user = token ? await runtime.auth.getUser(token) : null;
+      if (!token || user === null) {
+        json(res, 401, { ok: false, error: 'Entre na conta para ativar o 2FA.' });
+        return;
+      }
+      if (!(await enforceRateLimit(req, res, runtime, 'mfa', user.email))) {
+        return;
+      }
+      const result = await runtime.auth.enrollTotp(token);
+      if (!result.ok) {
+        json(res, result.status, { ok: false, error: result.error });
+        return;
+      }
+      json(res, 200, {
+        ok: true,
+        stub: result.stub,
+        factor_id: result.factor_id,
+        secret: result.secret,
+        uri: result.uri,
+        qr_code: result.qr_code,
+      });
+      return;
+    }
+
+    if (method === 'POST' && pathname === '/api/auth/mfa/verify') {
+      const token = readSessionToken(req);
+      const user = token ? await runtime.auth.getUser(token) : null;
+      if (!token || user === null) {
+        json(res, 401, { ok: false, error: 'Entre na conta para confirmar o 2FA.' });
+        return;
+      }
+      if (!(await enforceRateLimit(req, res, runtime, 'mfa', user.email))) {
+        return;
+      }
+      const body = asRecord(await readJsonBody(req));
+      const result = await runtime.auth.verifyTotp(token, {
+        code: typeof body['code'] === 'string' ? body['code'] : '',
+        factor_id: typeof body['factor_id'] === 'string' ? body['factor_id'] : null,
+        challenge_id: typeof body['challenge_id'] === 'string' ? body['challenge_id'] : null,
+      });
+      if (!result.ok) {
+        json(res, result.status, { ok: false, error: result.error });
+        return;
+      }
+      setSessionCookie(res, result.session.access_token);
+      json(res, 200, {
+        ok: true,
+        stub: result.stub,
+        user: result.session.user,
+        mfa_required: mfaRequired(result.session.user),
+        aal: result.session.user.aal,
+      });
       return;
     }
 

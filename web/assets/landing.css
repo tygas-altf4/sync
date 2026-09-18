@@ -596,6 +596,42 @@ input:disabled {
   min-height: 24px;
 }
 
+.mfa-box {
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.mfa-box h2 {
+  font-size: 20px;
+}
+
+.totp-secret {
+  display: block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.06em;
+  font-size: 14px;
+  background: #f3efe6;
+  border: 1px solid var(--line);
+  padding: 10px 12px;
+  word-break: break-all;
+}
+
+.totp-qr {
+  width: 180px;
+  height: 180px;
+  background: #fff;
+  border: 1px solid var(--line);
+}
+
+.mfa-code {
+  font-size: 22px;
+  letter-spacing: 0.28em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
 .stub-captcha small {
   display: block;
   color: var(--ink-soft);

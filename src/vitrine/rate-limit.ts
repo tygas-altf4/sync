@@ -1,7 +1,7 @@
 import type { IncomingHttpHeaders } from 'node:http';
 
 /**
- * Rate limit dia 1 — form de lead, cadastro e login.
+ * Rate limit dia 1 — form de lead, cadastro, login e desafio MFA.
  *
  * Por que existe: captcha sozinho não segura retry automático. O ponto de
  * enforcement é sempre a rota do servidor (nunca o browser).
@@ -10,7 +10,7 @@ import type { IncomingHttpHeaders } from 'node:http';
  * processo (`mode=memory`, stub=true). Serve pra draft/local; não compartilha
  * entre instâncias. Com Upstash, o contador é compartilhado.
  */
-export type RateLimitRoute = 'leads' | 'signup' | 'login';
+export type RateLimitRoute = 'leads' | 'signup' | 'login' | 'mfa';
 
 export type RateLimitMode = 'memory' | 'upstash';
 
@@ -27,6 +27,7 @@ export const RATE_LIMIT_POLICY: Record<
   leads: { ip: { max: 8, windowSec: 15 * 60 }, email: { max: 3, windowSec: 15 * 60 } },
   signup: { ip: { max: 5, windowSec: 15 * 60 }, email: { max: 3, windowSec: 60 * 60 } },
   login: { ip: { max: 10, windowSec: 15 * 60 }, email: { max: 8, windowSec: 15 * 60 } },
+  mfa: { ip: { max: 8, windowSec: 15 * 60 }, email: { max: 5, windowSec: 15 * 60 } },
 };
 
 export type RateLimitInput = {

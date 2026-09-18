@@ -1,9 +1,12 @@
 /**
  * Cadastro/login da Vitrine. Símbolos em inglês; comportamento alinhado ao
- * Supabase Auth. Sem service role aqui — signup/login usam a anon key.
- * E-mail começa não confirmado; onboarding só depois de `email_confirmed`.
+ * Supabase Auth. Sem service role aqui — signup/login/MFA usam a anon key.
+ * E-mail começa não confirmado; 2FA (TOTP) só depois de `email_confirmed`.
  */
 import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
+import { otpauthUri, randomTotpSecret, TOTP_ISSUER, verifyTotpCode } from './totp.js';
+
+export type AalLevel = 'aal1' | 'aal2';
 
 export type AuthUser = {
   id: string;
@@ -11,6 +14,8 @@ export type AuthUser = {
   nome: string | null;
   lead_id: string | null;
   email_confirmed: boolean;
+  mfa_enrolled: boolean;
+  aal: AalLevel;
 };
 
 export type AuthSession = {
@@ -20,6 +25,15 @@ export type AuthSession = {
 
 export type AuthFailure = { ok: false; error: string; status: number };
 export type AuthSuccess = { ok: true; stub: boolean; session: AuthSession };
+
+export type MfaEnrollSuccess = {
+  ok: true;
+  stub: boolean;
+  factor_id: string;
+  secret: string;
+  uri: string;
+  qr_code: string | null;
+};
 
 export interface AuthService {
   readonly mode: 'supabase' | 'stub';
@@ -34,6 +48,11 @@ export interface AuthService {
   confirmEmail(accessToken: string): Promise<AuthSuccess | AuthFailure>;
   recoverPassword(email: string): Promise<{ ok: true; stub: boolean } | AuthFailure>;
   resendConfirmation(email: string): Promise<{ ok: true; stub: boolean } | AuthFailure>;
+  enrollTotp(accessToken: string): Promise<MfaEnrollSuccess | AuthFailure>;
+  verifyTotp(
+    accessToken: string,
+    input: { code: string; factor_id?: string | null; challenge_id?: string | null },
+  ): Promise<AuthSuccess | AuthFailure>;
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -47,6 +66,10 @@ export function validatePassword(value: unknown): string | null {
     return null;
   }
   return value;
+}
+
+export function mfaRequired(user: AuthUser | null): boolean {
+  return user !== null && user.mfa_enrolled && user.aal !== 'aal2';
 }
 
 function hashPassword(password: string): string {
@@ -68,12 +91,24 @@ function verifyPassword(password: string, stored: string): boolean {
   return timingSafeEqual(actual, expected);
 }
 
-type MemoryUser = AuthUser & { password_hash: string };
+type MemoryUser = {
+  id: string;
+  email: string;
+  nome: string | null;
+  lead_id: string | null;
+  email_confirmed: boolean;
+  password_hash: string;
+  totp_secret: string | null;
+  totp_factor_id: string | null;
+  mfa_verified: boolean;
+};
+
+type MemorySession = { email: string; aal: AalLevel };
 
 export class MemoryAuthService implements AuthService {
   readonly mode = 'stub' as const;
   private readonly users = new Map<string, MemoryUser>();
-  private readonly sessions = new Map<string, string>();
+  private readonly sessions = new Map<string, MemorySession>();
 
   async signUp(input: {
     email: string;
@@ -99,9 +134,12 @@ export class MemoryAuthService implements AuthService {
       lead_id: input.lead_id?.trim() || null,
       email_confirmed: false,
       password_hash: hashPassword(password),
+      totp_secret: null,
+      totp_factor_id: null,
+      mfa_verified: false,
     };
     this.users.set(email, user);
-    return { ok: true, stub: true, session: this.issue(user) };
+    return { ok: true, stub: true, session: this.issue(user, 'aal1') };
   }
 
   async signIn(input: { email: string; password: string }): Promise<AuthSuccess | AuthFailure> {
@@ -111,25 +149,26 @@ export class MemoryAuthService implements AuthService {
     if (user === undefined || !verifyPassword(password, user.password_hash)) {
       return { ok: false, error: 'E-mail ou senha inválidos.', status: 401 };
     }
-    return { ok: true, stub: true, session: this.issue(user) };
+    // Senha só chega em aal1. Se o TOTP já está ativo, o UI pede o código.
+    return { ok: true, stub: true, session: this.issue(user, 'aal1') };
   }
 
   async getUser(accessToken: string): Promise<AuthUser | null> {
-    const email = this.sessions.get(accessToken);
-    if (!email) {
+    const session = this.sessions.get(accessToken);
+    if (!session) {
       return null;
     }
-    return this.publicUser(this.users.get(email));
+    return this.publicUser(this.users.get(session.email), session.aal);
   }
 
   async confirmEmail(accessToken: string): Promise<AuthSuccess | AuthFailure> {
-    const email = this.sessions.get(accessToken);
-    const user = email ? this.users.get(email) : undefined;
+    const session = this.sessions.get(accessToken);
+    const user = session ? this.users.get(session.email) : undefined;
     if (user === undefined) {
       return { ok: false, error: 'Sessão inválida.', status: 401 };
     }
     user.email_confirmed = true;
-    return { ok: true, stub: true, session: this.issue(user) };
+    return { ok: true, stub: true, session: this.issue(user, session?.aal ?? 'aal1') };
   }
 
   async recoverPassword(email: string): Promise<{ ok: true; stub: boolean } | AuthFailure> {
@@ -147,13 +186,61 @@ export class MemoryAuthService implements AuthService {
     return { ok: true, stub: true };
   }
 
-  private issue(user: MemoryUser): AuthSession {
-    const access_token = randomBytes(24).toString('hex');
-    this.sessions.set(access_token, user.email);
-    return { access_token, user: this.publicUser(user)! };
+  async enrollTotp(accessToken: string): Promise<MfaEnrollSuccess | AuthFailure> {
+    const session = this.sessions.get(accessToken);
+    const user = session ? this.users.get(session.email) : undefined;
+    if (user === undefined) {
+      return { ok: false, error: 'Sessão inválida.', status: 401 };
+    }
+    if (!user.email_confirmed) {
+      return { ok: false, error: MFA_EMAIL_GATE, status: 403 };
+    }
+    if (user.mfa_verified) {
+      return { ok: false, error: MFA_ALREADY, status: 409 };
+    }
+    const secret = randomTotpSecret();
+    const factor_id = crypto.randomUUID();
+    user.totp_secret = secret;
+    user.totp_factor_id = factor_id;
+    return {
+      ok: true,
+      stub: true,
+      factor_id,
+      secret,
+      uri: otpauthUri(user.email, secret),
+      qr_code: null,
+    };
   }
 
-  private publicUser(user: MemoryUser | undefined): AuthUser | null {
+  async verifyTotp(
+    accessToken: string,
+    input: { code: string; factor_id?: string | null; challenge_id?: string | null },
+  ): Promise<AuthSuccess | AuthFailure> {
+    const session = this.sessions.get(accessToken);
+    const user = session ? this.users.get(session.email) : undefined;
+    if (user === undefined) {
+      return { ok: false, error: 'Sessão inválida.', status: 401 };
+    }
+    if (!user.totp_secret || !user.totp_factor_id) {
+      return { ok: false, error: 'Ative o autenticador antes de confirmar o código.', status: 400 };
+    }
+    if (input.factor_id && input.factor_id !== user.totp_factor_id) {
+      return { ok: false, error: MFA_CODE_INVALID, status: 401 };
+    }
+    if (!verifyTotpCode(user.totp_secret, input.code)) {
+      return { ok: false, error: MFA_CODE_INVALID, status: 401 };
+    }
+    user.mfa_verified = true;
+    return { ok: true, stub: true, session: this.issue(user, 'aal2') };
+  }
+
+  private issue(user: MemoryUser, aal: AalLevel): AuthSession {
+    const access_token = randomBytes(24).toString('hex');
+    this.sessions.set(access_token, { email: user.email, aal });
+    return { access_token, user: this.publicUser(user, aal)! };
+  }
+
+  private publicUser(user: MemoryUser | undefined, aal: AalLevel): AuthUser | null {
     if (user === undefined) {
       return null;
     }
@@ -163,20 +250,37 @@ export class MemoryAuthService implements AuthService {
       nome: user.nome,
       lead_id: user.lead_id,
       email_confirmed: user.email_confirmed,
+      mfa_enrolled: user.mfa_verified,
+      aal,
     };
   }
 }
+
+type GoTrueFactor = {
+  id: string;
+  factor_type?: string;
+  type?: string;
+  status?: string;
+};
 
 type GoTrueUser = {
   id: string;
   email?: string;
   email_confirmed_at?: string | null;
   user_metadata?: { nome?: string; lead_id?: string };
+  factors?: GoTrueFactor[];
 };
 
 type GoTrueSession = {
   access_token?: string;
   user?: GoTrueUser;
+};
+
+type GoTrueEnroll = {
+  id?: string;
+  totp?: { qr_code?: string; secret?: string; uri?: string };
+  error_description?: string;
+  msg?: string;
 };
 
 export class SupabaseAuthService implements AuthService {
@@ -203,7 +307,7 @@ export class SupabaseAuthService implements AuthService {
     return `${this.baseUrl.replace(/\/$/, '')}${path}`;
   }
 
-  private toUser(raw: GoTrueUser | undefined): AuthUser | null {
+  private toUser(raw: GoTrueUser | undefined, aal: AalLevel): AuthUser | null {
     if (!raw?.id) {
       return null;
     }
@@ -213,6 +317,8 @@ export class SupabaseAuthService implements AuthService {
       nome: raw.user_metadata?.nome ?? null,
       lead_id: raw.user_metadata?.lead_id ?? null,
       email_confirmed: Boolean(raw.email_confirmed_at),
+      mfa_enrolled: totpFactor(raw)?.status === 'verified',
+      aal,
     };
   }
 
@@ -244,7 +350,7 @@ export class SupabaseAuthService implements AuthService {
         status: response.status,
       };
     }
-    const user = this.toUser(body.user);
+    const user = this.toUser(body.user, 'aal1');
     if (user === null) {
       return { ok: false, error: 'Resposta de auth incompleta.', status: 502 };
     }
@@ -262,7 +368,8 @@ export class SupabaseAuthService implements AuthService {
     if (!response.ok || !body.access_token) {
       return { ok: false, error: body.error_description ?? 'E-mail ou senha inválidos.', status: 401 };
     }
-    const user = this.toUser(body.user) ?? (await this.getUser(body.access_token));
+    const aal = aalFromAccessToken(body.access_token);
+    const user = this.toUser(body.user, aal) ?? (await this.getUser(body.access_token));
     if (user === null) {
       return { ok: false, error: 'Sessão inválida.', status: 401 };
     }
@@ -279,7 +386,7 @@ export class SupabaseAuthService implements AuthService {
     if (!response.ok) {
       return null;
     }
-    return this.toUser((await response.json()) as GoTrueUser);
+    return this.toUser((await response.json()) as GoTrueUser, aalFromAccessToken(accessToken));
   }
 
   async confirmEmail(accessToken: string): Promise<AuthSuccess | AuthFailure> {
@@ -324,6 +431,118 @@ export class SupabaseAuthService implements AuthService {
     }
     return { ok: true, stub: false };
   }
+
+  async enrollTotp(accessToken: string): Promise<MfaEnrollSuccess | AuthFailure> {
+    const user = await this.getUser(accessToken);
+    if (user === null) {
+      return { ok: false, error: 'Sessão inválida.', status: 401 };
+    }
+    if (!user.email_confirmed) {
+      return { ok: false, error: MFA_EMAIL_GATE, status: 403 };
+    }
+    if (user.mfa_enrolled) {
+      return { ok: false, error: MFA_ALREADY, status: 409 };
+    }
+    const response = await this.fetchImpl(this.url('/auth/v1/factors'), {
+      method: 'POST',
+      headers: this.headers(accessToken),
+      body: JSON.stringify({
+        friendly_name: TOTP_ISSUER,
+        factor_type: 'totp',
+        issuer: TOTP_ISSUER,
+      }),
+    });
+    const body = (await response.json()) as GoTrueEnroll;
+    if (!response.ok || !body.id || !body.totp?.secret) {
+      return {
+        ok: false,
+        error: body.error_description ?? body.msg ?? 'Não deu pra iniciar o 2FA.',
+        status: response.status >= 400 ? response.status : 502,
+      };
+    }
+    return {
+      ok: true,
+      stub: false,
+      factor_id: body.id,
+      secret: body.totp.secret,
+      uri: body.totp.uri ?? otpauthUri(user.email, body.totp.secret),
+      qr_code: body.totp.qr_code ?? null,
+    };
+  }
+
+  async verifyTotp(
+    accessToken: string,
+    input: { code: string; factor_id?: string | null; challenge_id?: string | null },
+  ): Promise<AuthSuccess | AuthFailure> {
+    if (!accessToken || accessToken.startsWith('pending:')) {
+      return { ok: false, error: 'Sessão inválida.', status: 401 };
+    }
+    const me = await this.fetchImpl(this.url('/auth/v1/user'), {
+      headers: this.headers(accessToken),
+    });
+    if (!me.ok) {
+      return { ok: false, error: 'Sessão inválida.', status: 401 };
+    }
+    const raw = (await me.json()) as GoTrueUser;
+    const factorId = input.factor_id?.trim() || totpFactor(raw)?.id;
+    if (!factorId) {
+      return { ok: false, error: 'Ative o autenticador antes de confirmar o código.', status: 400 };
+    }
+    let challengeId = input.challenge_id?.trim() || '';
+    if (challengeId === '') {
+      const challenge = await this.fetchImpl(this.url(`/auth/v1/factors/${factorId}/challenge`), {
+        method: 'POST',
+        headers: this.headers(accessToken),
+        body: '{}',
+      });
+      const challenged = (await challenge.json()) as { id?: string; error_description?: string; msg?: string };
+      if (!challenge.ok || !challenged.id) {
+        return {
+          ok: false,
+          error: challenged.error_description ?? challenged.msg ?? 'Não deu pra desafiar o 2FA.',
+          status: challenge.status >= 400 ? challenge.status : 502,
+        };
+      }
+      challengeId = challenged.id;
+    }
+    const response = await this.fetchImpl(this.url(`/auth/v1/factors/${factorId}/verify`), {
+      method: 'POST',
+      headers: this.headers(accessToken),
+      body: JSON.stringify({ challenge_id: challengeId, code: String(input.code ?? '').replace(/\s/g, '') }),
+    });
+    const body = (await response.json()) as GoTrueSession & { error_description?: string; msg?: string };
+    if (!response.ok || !body.access_token) {
+      return {
+        ok: false,
+        error: body.error_description ?? body.msg ?? MFA_CODE_INVALID,
+        status: response.status >= 400 ? response.status : 401,
+      };
+    }
+    const aal = aalFromAccessToken(body.access_token);
+    const verified = this.toUser(body.user, aal) ?? (await this.getUser(body.access_token));
+    if (verified === null) {
+      return { ok: false, error: 'Sessão inválida.', status: 401 };
+    }
+    return { ok: true, stub: false, session: { access_token: body.access_token, user: verified } };
+  }
+}
+
+function totpFactor(raw: GoTrueUser): GoTrueFactor | undefined {
+  const factors = (raw.factors ?? []).filter((factor) => (factor.factor_type ?? factor.type) === 'totp');
+  return factors.find((factor) => factor.status === 'verified') ?? factors[0];
+}
+
+export function aalFromAccessToken(token: string): AalLevel {
+  const payload = token.split('.')[1];
+  if (!payload) {
+    return 'aal1';
+  }
+  try {
+    const json = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as { aal?: string };
+    return json.aal === 'aal2' ? 'aal2' : 'aal1';
+  } catch {
+    return 'aal1';
+  }
 }
 
 export function createAuthService(env: NodeJS.ProcessEnv = process.env): AuthService {
@@ -337,3 +556,8 @@ export function createAuthService(env: NodeJS.ProcessEnv = process.env): AuthSer
 
 export const ONBOARDING_VERIFY_MESSAGE =
   'Confirme o e-mail antes do onboarding. Sem verificação a conta free não é liberada.';
+
+export const MFA_EMAIL_GATE = 'Confirme o e-mail antes de ativar o 2FA.';
+export const MFA_ALREADY = 'Esta conta já tem 2FA ativo.';
+export const MFA_CODE_INVALID = 'Código 2FA inválido.';
+export const MFA_CHALLENGE_MESSAGE = 'Digite o código de 6 dígitos do autenticador.';

@@ -17,7 +17,7 @@
   </head>
   <body>
     <div class="draft-banner">
-      Rascunho — Auth Supabase + verificação de e-mail. Sem publish.
+      Rascunho — Auth Supabase + e-mail + 2FA (TOTP). Sem publish.
     </div>
     <header class="site-header">
       <div class="wrap">
@@ -35,8 +35,8 @@
       <p class="eyebrow">Supabase Auth</p>
       <h1>Crie a conta ou entre</h1>
       <p class="lede">
-        A cota free só libera depois do e-mail confirmado. Sem cartão. Sem cobrança nesta
-        página.
+        A cota free só libera depois do e-mail confirmado. Depois disso oferecemos
+        2FA (TOTP) na área da conta. Sem cartão. Sem cobrança nesta página.
       </p>
       <div class="auth-grid">
         <form id="signup-form" class="auth-card">
@@ -85,6 +85,7 @@
           </div>
           <div id="login-captcha" class="captcha-slot"></div>
           <button class="btn-ghost" type="submit">Entrar</button>
+          <p class="micro">Se o 2FA estiver ativo, o código do autenticador vem em seguida em /conta.</p>
         </form>
       </div>
       <p class="form-status" id="auth-status" role="status" aria-live="polite"></p>
