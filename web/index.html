@@ -26,12 +26,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,520;0,9..144,620;1,9..144,520&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/assets/landing.css" />
   </head>
-  <body>
+  <body class="page-home">
     <div class="draft-banner">
       Rascunho de staging — sem DNS em sync.plvria.com.br e sem publicação em produção.
     </div>
@@ -56,18 +56,20 @@
       <section class="hero" id="topo">
         <div class="wrap hero-grid">
           <div class="hero-copy">
+            <div class="hero-poster">
               <div class="hero-visual" aria-hidden="true">
-              <img
-                class="hero-still"
-                src="/assets/hero-still.svg"
-                alt=""
-                width="960"
-                height="420"
-                decoding="async"
-              />
-              <canvas id="hero-canvas" class="hero-canvas" width="960" height="420"></canvas>
-            </div>
-            <div class="hero-copy-inner">
+                <img
+                  class="hero-still"
+                  src="/assets/hero-still.svg"
+                  alt=""
+                  width="960"
+                  height="420"
+                  decoding="async"
+                />
+                <canvas id="hero-canvas" class="hero-canvas" width="960" height="420"></canvas>
+                <p class="hero-reel">NFS-e · serviço</p>
+              </div>
+              <div class="hero-copy-inner">
               <div class="hero-pills">
                 <p class="proof-badge">Marca Plvria — 15 anos no mercado</p>
                 <p class="free50-chip">Free50 · 50 notas · R$&nbsp;0 · sem cartão</p>
@@ -102,6 +104,7 @@
                   <dd>4000 · R$&nbsp;549</dd>
                 </div>
               </dl>
+              </div>
             </div>
           </div>
           <aside class="hero-panel" id="comecar" aria-labelledby="form-heading">
@@ -181,33 +184,107 @@
       </section>
 
       <section class="trust" aria-label="Marca, certificado e segurança">
-        <div class="wrap trust-row">
-          <p>
-            <strong>Marca Plvria — 15 anos no mercado</strong>
-            <span>A idade é da marca. NFS-e Nacional é o serviço — não NF-e de mercadoria.</span>
+        <div class="wrap">
+          <div class="trust-row">
+            <p class="benefit benefit-marca">
+              <span class="proof-num" id="marca-anos">15</span>
+              <span class="proof-unit">anos da marca</span>
+              <strong>Marca Plvria — 15 anos no mercado</strong>
+              <span>A idade é da marca. NFS-e Nacional é o serviço — não NF-e de mercadoria.</span>
+            </p>
+            <p class="benefit">
+              <strong>Certificado A1</strong>
+              <span>Cofre no servidor. Nunca PFX/PEM no browser.</span>
+            </p>
+            <p class="benefit">
+              <strong>Segurança</strong>
+              <span>E-mail verificado e 2FA antes de emitir.</span>
+            </p>
+            <p class="benefit">
+              <strong>Empresa e contador</strong>
+              <span>Mesmo status da nota, no mesmo lugar.</span>
+            </p>
+          </div>
+          <p class="micro proof-note">
+            Prova numérica nesta página: a idade da marca. As cotas 50 / 150 / 1000 / 4000 são
+            teto de plano, não volume de clientes.
           </p>
-          <p>
-            <strong>Certificado A1</strong>
-            <span>Cofre no servidor. Nunca PFX/PEM no browser.</span>
-          </p>
-          <p>
-            <strong>Segurança</strong>
-            <span>E-mail verificado e 2FA antes de emitir.</span>
-          </p>
-          <p>
-            <strong>Empresa e contador</strong>
-            <span>Mesmo status da nota, no mesmo lugar.</span>
-          </p>
+        </div>
+      </section>
+
+      <section class="flow" id="fluxo" aria-labelledby="fluxo-heading">
+        <div class="wrap">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Fluxo da nota</p>
+              <h2 id="fluxo-heading">Emitir, validar, consultar, guardar</h2>
+            </div>
+            <p class="lede">
+              Quatro momentos da NFS-e de serviço, em cartões ilustrativos. Esta página não emite
+              nota e não promete cobertura de município.
+            </p>
+          </div>
+          <div class="flow-stage">
+            <span class="flow-runner" aria-hidden="true"></span>
+            <ol class="flow-track">
+              <li class="flow-card" style="--i: 0">
+                <div class="flow-mock" aria-hidden="true">
+                  <span class="mock-kicker">Serviço</span>
+                  <span class="mock-line"></span>
+                  <span class="mock-line mock-line-short"></span>
+                  <span class="mock-pill">Emitir</span>
+                </div>
+                <p class="flow-index">01</p>
+                <h3>Emitir</h3>
+                <p>A nota de serviço entra no canal nacional.</p>
+              </li>
+              <li class="flow-card" style="--i: 1">
+                <div class="flow-mock" aria-hidden="true">
+                  <span class="mock-kicker">Conferência</span>
+                  <span class="mock-line"></span>
+                  <span class="mock-line mock-line-short"></span>
+                  <span class="mock-check"></span>
+                </div>
+                <p class="flow-index">02</p>
+                <h3>Validar</h3>
+                <p>Prestador e descrição do serviço passam na conferência antes de seguir.</p>
+              </li>
+              <li class="flow-card" style="--i: 2">
+                <div class="flow-mock" aria-hidden="true">
+                  <span class="mock-kicker">Status</span>
+                  <span class="mock-status"><i></i> No mesmo lugar</span>
+                  <span class="mock-line"></span>
+                  <span class="mock-line mock-line-mid"></span>
+                </div>
+                <p class="flow-index">03</p>
+                <h3>Consultar</h3>
+                <p>Empresa e contador acompanham o status da nota juntos.</p>
+              </li>
+              <li class="flow-card" style="--i: 3">
+                <div class="flow-mock" aria-hidden="true">
+                  <span class="mock-kicker">Arquivo</span>
+                  <span class="mock-files"><span>XML</span><span>PDF</span></span>
+                </div>
+                <p class="flow-index">04</p>
+                <h3>XML / PDF</h3>
+                <p>O arquivo da nota fica à mão. PFX/PEM não passam pelo browser.</p>
+              </li>
+            </ol>
+          </div>
         </div>
       </section>
 
       <section class="bento" id="nfse" aria-labelledby="bento-heading">
         <div class="wrap">
-          <p class="eyebrow">NFS-e · serviço</p>
-          <h2 id="bento-heading">Do cadastro ao status, no mesmo lugar</h2>
-          <p class="lede">
-            Recorte de nota de serviço (NFS-e Nacional). Sem NF-e de mercadoria neste produto.
-          </p>
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">NFS-e · serviço</p>
+              <h2 id="bento-heading">Do cadastro ao status, no mesmo lugar</h2>
+            </div>
+            <p class="lede">
+              Recorte de nota de serviço (NFS-e Nacional). Sem NF-e de mercadoria neste produto.
+            </p>
+          </div>
           <div class="bento-grid">
             <article class="bento-card bento-hero">
               <p class="bento-kicker">Canal nacional</p>
