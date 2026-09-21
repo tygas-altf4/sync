@@ -7,6 +7,7 @@
  * no Safari iOS (dark mode) vira tela preta.
  */
 import { PAGE_MAP } from '../src/vitrine/pages.js';
+import { applyStagingSurface, isExplicitStaging } from '../src/vitrine/staging.js';
 import { clientIp } from '../src/vitrine/rate-limit.js';
 import { sessionClearCookieValue, sessionSetCookieValue } from '../src/vitrine/session.js';
 
@@ -22,6 +23,8 @@ export type PreviewEnv = {
   TURNSTILE_SECRET_KEY?: string;
   UPSTASH_REDIS_REST_URL?: string;
   UPSTASH_REDIS_REST_TOKEN?: string;
+  /** Só "1" | "true" | "staging" revela banner e hostname. Ausente = build produto. */
+  VITRINE_STAGING?: string;
 };
 
 const ENV_KEYS = [
@@ -115,6 +118,11 @@ async function serveAsset(request: Request, env: PreviewEnv, pathname: string): 
   const headers = new Headers(response.headers);
   headers.set('X-Robots-Tag', 'noindex, nofollow');
   headers.set('X-Content-Type-Options', 'nosniff');
+  const type = headers.get('content-type') ?? '';
+  if (request.method !== 'HEAD' && isExplicitStaging(env.VITRINE_STAGING) && type.includes('text/html')) {
+    const html = applyStagingSurface(await response.text(), true);
+    return new Response(html, { status: response.status, headers });
+  }
   return new Response(response.body, { status: response.status, headers });
 }
 

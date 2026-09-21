@@ -166,8 +166,9 @@ for (const link of document.querySelectorAll('[data-perfil]')) {
 }
 
 /**
- * Loop boomerang leve do fluxo de NFS-e. Sem mix-blend (lama no creme).
- * Pausa fora da viewport; desliga em low-end / reduced-motion / save-data.
+ * Véu leve sobre o still do hero. O canvas não pinta o creme por cima —
+ * senão some a foto. Pausa fora da viewport; desliga em low-end /
+ * reduced-motion / save-data.
  */
 function shouldRunHeroCanvas() {
   const canvas = document.getElementById('hero-canvas');
@@ -188,8 +189,6 @@ function mountHeroCanvas() {
   const ctx = canvas.getContext('2d', { alpha: true });
   if (!ctx) return;
 
-  const paper = '#fffaf3';
-  const line = '#d2c8b6';
   const accent = '#b5441f';
   const ink = '#1b1916';
   let playing = false;
@@ -215,31 +214,6 @@ function mountHeroCanvas() {
     return t <= 1 ? t : 2 - t;
   }
 
-  function drawCard(x, y, w, h, fill, bar) {
-    ctx.beginPath();
-    if (typeof ctx.roundRect === 'function') {
-      ctx.roundRect(x, y, w, h, 10);
-    } else {
-      ctx.rect(x, y, w, h);
-    }
-    ctx.fillStyle = fill;
-    ctx.fill();
-    ctx.strokeStyle = line;
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    ctx.fillStyle = bar;
-    ctx.beginPath();
-    if (typeof ctx.roundRect === 'function') {
-      ctx.roundRect(x + 14, y + 16, w * 0.38, 7, 4);
-    } else {
-      ctx.rect(x + 14, y + 16, w * 0.38, 7);
-    }
-    ctx.fill();
-    ctx.fillStyle = 'rgba(79, 74, 67, 0.28)';
-    ctx.fillRect(x + 14, y + 34, w * 0.62, 5);
-    ctx.fillRect(x + 14, y + 46, w * 0.48, 5);
-  }
-
   function frame(now) {
     if (!playing) return;
     const t = pingPong(now - start);
@@ -247,40 +221,27 @@ function mountHeroCanvas() {
     const w = rect.width;
     const h = rect.height;
     ctx.clearRect(0, 0, w, h);
-    ctx.fillStyle = paper;
-    ctx.fillRect(0, 0, w, h);
 
     ctx.beginPath();
-    ctx.moveTo(w * 0.06, h * 0.72);
-    ctx.bezierCurveTo(w * 0.22, h * 0.62, w * 0.3, h * 0.2, w * 0.48, h * 0.32);
-    ctx.bezierCurveTo(w * 0.66, h * 0.46, w * 0.78, h * 0.22, w * 0.94, h * 0.3);
-    ctx.strokeStyle = line;
-    ctx.setLineDash([5, 8]);
-    ctx.lineWidth = 1.4;
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    ctx.beginPath();
-    ctx.moveTo(w * 0.08, h * 0.3);
-    ctx.bezierCurveTo(w * 0.24, h * 0.12, w * 0.34, h * 0.62, w * 0.52, h * 0.54);
-    ctx.bezierCurveTo(w * 0.7, h * 0.44, w * 0.82, h * 0.7, w * 0.94, h * 0.58);
-    ctx.strokeStyle = 'rgba(181, 68, 31, 0.5)';
-    ctx.lineWidth = 1.6;
+    ctx.moveTo(w * 0.06, h * (0.42 + (1 - t) * 0.04));
+    ctx.bezierCurveTo(w * 0.28, h * 0.22, w * 0.46, h * 0.5, w * 0.94, h * (0.3 + t * 0.06));
+    ctx.strokeStyle = 'rgba(181, 68, 31, 0.38)';
+    ctx.lineWidth = 1.25;
     ctx.stroke();
 
-    const notes = [
-      { x: 0.08 + t * 0.18, y: 0.16, w: 0.2, h: 0.42, fill: '#f3efe6', bar: ink },
-      { x: 0.38 + (1 - t) * 0.08, y: 0.38, w: 0.24, h: 0.48, fill: paper, bar: '#243d32' },
-      { x: 0.68 + t * 0.06, y: 0.12, w: 0.22, h: 0.46, fill: '#243d32', bar: '#c4a574' },
+    const motes = [
+      { x: 0.16 + t * 0.08, y: 0.34, r: 2.4, c: accent },
+      { x: 0.58 + (1 - t) * 0.05, y: 0.22, r: 1.7, c: ink },
+      { x: 0.82 + t * 0.03, y: 0.4, r: 2.1, c: '#243d32' },
     ];
-    for (const note of notes) {
-      drawCard(note.x * w, note.y * h, note.w * w, note.h * h, note.fill, note.bar);
+    for (const mote of motes) {
+      ctx.globalAlpha = 0.55;
+      ctx.fillStyle = mote.c;
+      ctx.beginPath();
+      ctx.arc(mote.x * w, mote.y * h, mote.r, 0, Math.PI * 2);
+      ctx.fill();
     }
-
-    ctx.fillStyle = accent;
-    ctx.beginPath();
-    ctx.arc(w * (0.14 + t * 0.7), h * (0.68 - t * 0.22), 4, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.globalAlpha = 1;
 
     raf = window.requestAnimationFrame(frame);
   }
