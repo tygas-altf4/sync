@@ -166,39 +166,49 @@ for (const link of document.querySelectorAll('[data-perfil]')) {
 }
 
 /**
- * Véu leve sobre o still do hero. O canvas não pinta o creme por cima —
- * senão some a foto. Pausa fora da viewport; desliga em low-end /
- * reduced-motion / save-data.
+ * Luz de cinema sobre o still: um véu que atravessa e pouca poeira.
+ * Não pinta creme opaco — a nota ilustrada precisa continuar visível.
+ * Desliga em reduced-motion, save-data, viewport estreito e CPU fraca.
+ * ~30 fps, DPR limitado, pausa fora da viewport.
  */
-function shouldRunHeroCanvas() {
-  const canvas = document.getElementById('hero-canvas');
-  if (!(canvas instanceof HTMLCanvasElement)) return false;
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+function prefersStill() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return true;
   const connection = navigator.connection;
-  if (connection?.saveData) return false;
-  if (window.matchMedia('(max-width: 720px)').matches) return false;
+  return Boolean(connection?.saveData);
+}
+
+function heroCanvasAllowed() {
+  if (prefersStill()) return false;
+  if (window.matchMedia('(max-width: 960px)').matches) return false;
   const cores = navigator.hardwareConcurrency ?? 4;
-  if (cores <= 2) return false;
-  return true;
+  return cores > 2;
 }
 
 function mountHeroCanvas() {
   const canvas = document.getElementById('hero-canvas');
-  if (!(canvas instanceof HTMLCanvasElement) || !shouldRunHeroCanvas()) return;
+  const frame = canvas?.parentElement;
+  if (!(canvas instanceof HTMLCanvasElement) || !frame) return;
 
   const ctx = canvas.getContext('2d', { alpha: true });
   if (!ctx) return;
 
-  const accent = '#b5441f';
-  const ink = '#1b1916';
+  const motes = [
+    { ox: 0.14, oy: 0.28, r: 1.3, c: '#b5441f', v: 0.045 },
+    { ox: 0.32, oy: 0.46, r: 1.1, c: '#1b1916', v: 0.03 },
+    { ox: 0.58, oy: 0.22, r: 1.5, c: '#243d32', v: 0.038 },
+    { ox: 0.74, oy: 0.4, r: 1.2, c: '#b5441f', v: 0.026 },
+    { ox: 0.88, oy: 0.3, r: 1.1, c: '#1b1916', v: 0.034 },
+    { ox: 0.46, oy: 0.55, r: 1.4, c: '#c4a574', v: 0.022 },
+  ];
   let playing = false;
   let inView = false;
   let raf = 0;
   let start = 0;
+  let last = 0;
 
   function resize() {
     const rect = canvas.getBoundingClientRect();
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     const width = Math.max(1, Math.round(rect.width * dpr));
     const height = Math.max(1, Math.round(rect.height * dpr));
     if (canvas.width !== width || canvas.height !== height) {
@@ -208,72 +218,143 @@ function mountHeroCanvas() {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
-  function pingPong(timeMs) {
-    const cycle = 9000;
-    const t = (timeMs % (cycle * 2)) / cycle;
-    return t <= 1 ? t : 2 - t;
-  }
-
-  function frame(now) {
-    if (!playing) return;
-    const t = pingPong(now - start);
+  function draw(now) {
+    const t = (now - start) / 1000;
     const rect = canvas.getBoundingClientRect();
     const w = rect.width;
     const h = rect.height;
     ctx.clearRect(0, 0, w, h);
 
+    const travel = 0.5 + 0.5 * Math.sin(t * 0.42);
+    const x = w * (0.16 + 0.68 * travel);
+    const y = h * (0.42 + 0.05 * Math.sin(t * 0.27));
+    const radius = Math.max(w, h) * 0.62;
+    const glow = ctx.createRadialGradient(x, y, radius * 0.04, x, y, radius);
+    glow.addColorStop(0, 'rgba(255, 250, 243, 0.32)');
+    glow.addColorStop(0.38, 'rgba(181, 68, 31, 0.055)');
+    glow.addColorStop(1, 'rgba(243, 239, 230, 0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, w, h);
+
+    const curve = 0.5 + 0.5 * Math.sin(t * 0.35);
     ctx.beginPath();
-    ctx.moveTo(w * 0.06, h * (0.42 + (1 - t) * 0.04));
-    ctx.bezierCurveTo(w * 0.28, h * 0.22, w * 0.46, h * 0.5, w * 0.94, h * (0.3 + t * 0.06));
-    ctx.strokeStyle = 'rgba(181, 68, 31, 0.38)';
-    ctx.lineWidth = 1.25;
+    ctx.moveTo(w * 0.04, h * (0.58 - curve * 0.06));
+    ctx.bezierCurveTo(
+      w * 0.28,
+      h * (0.3 + curve * 0.08),
+      w * 0.62,
+      h * (0.62 - curve * 0.1),
+      w * 0.96,
+      h * (0.36 + curve * 0.05),
+    );
+    ctx.strokeStyle = 'rgba(181, 68, 31, 0.32)';
+    ctx.lineWidth = 1.15;
     ctx.stroke();
 
-    const motes = [
-      { x: 0.16 + t * 0.08, y: 0.34, r: 2.4, c: accent },
-      { x: 0.58 + (1 - t) * 0.05, y: 0.22, r: 1.7, c: ink },
-      { x: 0.82 + t * 0.03, y: 0.4, r: 2.1, c: '#243d32' },
-    ];
-    for (const mote of motes) {
-      ctx.globalAlpha = 0.55;
+    for (let i = 0; i < motes.length; i += 1) {
+      const mote = motes[i];
+      const drift = t * mote.v + i;
+      const mx = ((mote.ox + Math.sin(drift) * 0.035) % 1) * w;
+      const my = (mote.oy + Math.cos(drift * 0.8) * 0.03) * h;
+      ctx.globalAlpha = 0.22 + (i % 3) * 0.08;
       ctx.fillStyle = mote.c;
       ctx.beginPath();
-      ctx.arc(mote.x * w, mote.y * h, mote.r, 0, Math.PI * 2);
+      ctx.arc(mx, my, mote.r, 0, Math.PI * 2);
       ctx.fill();
     }
     ctx.globalAlpha = 1;
 
+    const scratch = t % 13;
+    if (scratch < 0.28) {
+      const sx = w * (0.22 + (scratch / 0.28) * 0.5);
+      ctx.strokeStyle = 'rgba(27, 25, 22, 0.14)';
+      ctx.lineWidth = 0.6;
+      ctx.beginPath();
+      ctx.moveTo(sx, h * 0.12);
+      ctx.lineTo(sx + 6, h * 0.78);
+      ctx.stroke();
+    }
+  }
+
+  function frame(now) {
+    if (!playing) return;
     raf = window.requestAnimationFrame(frame);
+    if (now - last < 32) return;
+    last = now;
+    draw(now);
   }
 
   function play() {
-    if (playing || document.hidden || !inView) return;
+    if (!heroCanvasAllowed() || playing || document.hidden || !inView) return;
     playing = true;
+    frame.classList.add('is-live');
     canvas.classList.add('is-on');
     start = performance.now();
+    last = 0;
     resize();
     raf = window.requestAnimationFrame(frame);
   }
 
   function pause() {
     playing = false;
+    frame.classList.remove('is-live');
+    canvas.classList.remove('is-on');
     window.cancelAnimationFrame(raf);
   }
 
   const observer = new IntersectionObserver(
     (entries) => {
-      inView = entries.some((entry) => entry.isIntersecting && entry.intersectionRatio > 0.15);
+      inView = entries.some((entry) => entry.isIntersecting && entry.intersectionRatio > 0.2);
       if (inView) play();
       else pause();
     },
-    { threshold: [0, 0.15, 0.4] },
+    { threshold: [0, 0.2, 0.45] },
   );
-  observer.observe(canvas.parentElement ?? canvas);
-  document.addEventListener('visibilitychange', () => {
+  observer.observe(frame);
+
+  function onVisibility() {
     if (document.hidden) pause();
     else play();
+  }
+
+  document.addEventListener('visibilitychange', onVisibility);
+  window.addEventListener('resize', () => {
+    if (!heroCanvasAllowed()) pause();
+    else if (playing) resize();
+    else play();
+  }, { passive: true });
+
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+  reduced.addEventListener('change', () => {
+    if (prefersStill()) pause();
+    else play();
   });
-  window.addEventListener('resize', resize, { passive: true });
+}
+
+/**
+ * Microinterações do fluxo só enquanto a faixa está na tela.
+ * Reduced-motion e save-data ficam no estado parado (selo, visto, arquivos visíveis).
+ */
+function mountFlowMotion() {
+  const stage = document.querySelector('.flow-stage');
+  if (!stage) return;
+
+  let inView = false;
+  const sync = () => {
+    stage.classList.toggle('is-live', inView && !document.hidden && !prefersStill());
+  };
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      inView = entries.some((entry) => entry.isIntersecting);
+      sync();
+    },
+    { threshold: 0.25 },
+  );
+  observer.observe(stage);
+  document.addEventListener('visibilitychange', sync);
+  window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', sync);
 }
 
 mountHeroCanvas();
+mountFlowMotion();

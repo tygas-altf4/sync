@@ -93,6 +93,11 @@ describe('landing copy', () => {
     assert.doesNotMatch(landing, /SyncNFe[^<]{0,80}15 anos/);
     assert.doesNotMatch(landing, /Plvria Sync[^<]{0,80}15 anos/);
     assert.match(landing, /não herda essa idade/);
+    assert.match(landing, /Lugar reservado|Reservado/);
+    assert.match(landing, /sem contagem/);
+    assert.doesNotMatch(landing, /mil municípios/i);
+    assert.doesNotMatch(landing, /municípios atendidos/i);
+    assert.doesNotMatch(landing, /clientes atendidos/i);
   });
 
   it('copy pública é Plvria + NFS-e (serviço), sem Sync/SyncNFe', () => {
@@ -121,6 +126,17 @@ describe('landing copy', () => {
     assert.match(landing, /family=Geist/);
     assert.match(landing, /hero-still\.svg/);
     assert.match(landing, /id="hero-canvas"/);
+    assert.match(landing, /class="hero-sheen"/);
+    assert.match(landing, /class="mock-stamp"/);
+    assert.match(landing, /class="mock-check-svg"/);
+    assert.match(landing, /class="mock-meter"/);
+    const motionCss = readFileSync(path.join(ROOT, 'web/assets/landing.css'), 'utf8');
+    assert.match(motionCss, /prefers-reduced-motion:\s*reduce/);
+    assert.match(motionCss, /cinema-sheen/);
+    assert.match(motionCss, /stamp-press/);
+    const motionJs = readFileSync(path.join(ROOT, 'web/assets/landing.js'), 'utf8');
+    assert.match(motionJs, /max-width:\s*960px/);
+    assert.match(motionJs, /prefers-reduced-motion/);
     assert.match(landing, /class="bento-grid"/);
     const css = readFileSync(path.join(ROOT, 'web/assets/landing.css'), 'utf8');
     assert.match(css, /--accent:\s*#b5441f/);

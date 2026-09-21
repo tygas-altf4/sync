@@ -62,11 +62,12 @@
                   class="hero-still"
                   src="/assets/hero-still.svg"
                   alt=""
-                  width="960"
-                  height="420"
+                  width="1200"
+                  height="720"
                   decoding="async"
                 />
-                <canvas id="hero-canvas" class="hero-canvas" width="960" height="420"></canvas>
+                <canvas id="hero-canvas" class="hero-canvas" width="1200" height="720"></canvas>
+                <span class="hero-sheen"></span>
                 <p class="hero-reel">NFS-e · serviço</p>
               </div>
               <div class="hero-copy-inner">
@@ -205,9 +206,27 @@
               <span>Mesmo status da nota, no mesmo lugar.</span>
             </p>
           </div>
+          <ul class="proof-slots" aria-label="Lugares reservados, sem volume inventado">
+            <li>
+              <span class="slot-kicker">Reservado</span>
+              <strong>Escritório</strong>
+              <span class="slot-empty">sem nome</span>
+            </li>
+            <li>
+              <span class="slot-kicker">Reservado</span>
+              <strong>Empresa</strong>
+              <span class="slot-empty">sem nome</span>
+            </li>
+            <li>
+              <span class="slot-kicker">Reservado</span>
+              <strong>Município</strong>
+              <span class="slot-empty">sem contagem</span>
+            </li>
+          </ul>
           <p class="micro proof-note">
-            Prova numérica nesta página: a idade da marca. As cotas 50 / 150 / 1000 / 4000 são
-            teto de plano, não volume de clientes.
+            Prova numérica nesta página: a idade da marca. Sem clientes contados e sem
+            municípios somados. As cotas 50 / 150 / 1000 / 4000 são teto de plano, não volume
+            de clientes.
           </p>
         </div>
       </section>
@@ -232,7 +251,7 @@
                   <span class="mock-kicker">Serviço</span>
                   <span class="mock-line"></span>
                   <span class="mock-line mock-line-short"></span>
-                  <span class="mock-pill">Emitir</span>
+                  <span class="mock-stamp">NFS-e</span>
                 </div>
                 <p class="flow-index">01</p>
                 <h3>Emitir</h3>
@@ -243,7 +262,10 @@
                   <span class="mock-kicker">Conferência</span>
                   <span class="mock-line"></span>
                   <span class="mock-line mock-line-short"></span>
-                  <span class="mock-check"></span>
+                  <svg class="mock-check-svg" viewBox="0 0 28 28" aria-hidden="true">
+                    <circle cx="14" cy="14" r="11"></circle>
+                    <path d="M8.2 14.4 12.1 18.2 19.8 9.6"></path>
+                  </svg>
                 </div>
                 <p class="flow-index">02</p>
                 <h3>Validar</h3>
@@ -253,7 +275,7 @@
                 <div class="flow-mock" aria-hidden="true">
                   <span class="mock-kicker">Status</span>
                   <span class="mock-status"><i></i> No mesmo lugar</span>
-                  <span class="mock-line"></span>
+                  <span class="mock-meter"><i></i></span>
                   <span class="mock-line mock-line-mid"></span>
                 </div>
                 <p class="flow-index">03</p>
@@ -263,7 +285,7 @@
               <li class="flow-card" style="--i: 3">
                 <div class="flow-mock" aria-hidden="true">
                   <span class="mock-kicker">Arquivo</span>
-                  <span class="mock-files"><span>XML</span><span>PDF</span></span>
+                  <span class="mock-files"><span class="mock-page">XML</span><span class="mock-page">PDF</span></span>
                 </div>
                 <p class="flow-index">04</p>
                 <h3>XML / PDF</h3>
