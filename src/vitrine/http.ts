@@ -23,6 +23,7 @@ import {
 } from './api.js';
 import { PAGE_MAP } from './pages.js';
 import { clientIp } from './rate-limit.js';
+import { applyStagingSurface, isExplicitStaging } from './staging.js';
 import { sessionClearCookieValue, sessionSetCookieValue } from './session.js';
 
 const MODULE_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -110,7 +111,12 @@ async function serveStatic(res: ServerResponse, webRoot: string, urlPath: string
   try {
     const data = await readFile(filePath);
     const ext = path.extname(filePath);
-    sendText(res, 200, MIME[ext] ?? 'application/octet-stream', data);
+    const type = MIME[ext] ?? 'application/octet-stream';
+    if (ext === '.html' && isExplicitStaging(process.env['VITRINE_STAGING'])) {
+      sendText(res, 200, type, applyStagingSurface(data.toString('utf8'), true));
+      return;
+    }
+    sendText(res, 200, type, data);
   } catch {
     sendText(res, 404, 'text/html; charset=utf-8', '<!doctype html><title>404</title><p>Não encontrado.</p>');
   }

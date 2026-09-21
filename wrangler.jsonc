@@ -15,6 +15,7 @@
   "vars": {
     "SYNCNFE_AMBIENTE": "ProducaoRestrita",
     "SYNCNFE_PUBLIC_HOST": "sync.plvria.com.br",
+    "VITRINE_STAGING": "1",
     "SUPABASE_ANON_KEY": "preview-anon-placeholder"
   }
 }

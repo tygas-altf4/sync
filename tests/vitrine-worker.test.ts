@@ -9,8 +9,9 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const INDEX = readFileSync(path.join(ROOT, 'web/index.html'), 'utf8');
 const CSS = readFileSync(path.join(ROOT, 'web/assets/landing.css'), 'utf8');
 
-function previewEnv(options: { failAssets?: boolean } = {}) {
+function previewEnv(options: { failAssets?: boolean; staging?: string } = {}) {
   return {
+    ...(options.staging ? { VITRINE_STAGING: options.staging } : {}),
     ASSETS: {
       fetch: async (request: Request) => {
         if (options.failAssets) {
@@ -41,6 +42,22 @@ describe('worker preview (boot)', () => {
     const html = await res.text();
     assert.match(html, /Emita NFS-e Nacional e municipal sem burocracia/);
     assert.match(html, /color-scheme" content="light only"/);
+    assert.match(html, /staging-only" hidden/);
+    assert.match(html, />Cadastro</);
+    assert.match(html, />Entrar</);
+    assert.doesNotMatch(html, />\/cadastro</);
+    assert.doesNotMatch(html, />\/entrar</);
+  });
+
+  it('VITRINE_STAGING explícito revela banner e hostname', async () => {
+    const res = await worker.fetch(
+      new Request('https://preview.example/'),
+      previewEnv({ staging: '1' }),
+    );
+    const html = await res.text();
+    assert.match(html, /class="draft-banner staging-only">/);
+    assert.doesNotMatch(html, /staging-only" hidden/);
+    assert.match(html, /sync\.plvria\.com\.br/);
   });
 
   it('GET /assets/landing.css devolve o canvas claro', async () => {

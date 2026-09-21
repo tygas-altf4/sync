@@ -278,20 +278,18 @@ body.page-home .brand-mark {
   display: grid;
   grid-template-columns: 1.15fr 0.85fr;
   gap: 22px;
-  align-items: stretch;
+  align-items: start;
 }
 
 .hero-copy {
   position: relative;
   display: flex;
-  min-height: 640px;
 }
 
 .hero-poster {
   position: relative;
   flex: 1;
   display: flex;
-  min-height: 640px;
   border-radius: 28px;
   overflow: hidden;
   background: #f3efe6;
@@ -375,14 +373,9 @@ body.page-home .brand-mark {
   z-index: 1;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: flex-start;
   width: 100%;
-  min-height: 100%;
-  padding: 28px 32px 26px;
-}
-
-.hero-pills {
-  margin-bottom: auto;
+  padding: 156px 32px 22px;
 }
 
 /* Prova social da marca guarda-chuva — não atribuir os 15 anos ao serviço NFS-e. */
@@ -391,8 +384,7 @@ body.page-home .brand-mark {
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
-  margin: 0 0 auto;
-  padding-bottom: 28px;
+  margin: 0 0 12px;
 }
 
 .proof-badge {
@@ -496,7 +488,7 @@ h2 {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin: 22px 0 12px;
+  margin: 4px 0 16px;
 }
 
 .hero-stats {
@@ -548,7 +540,7 @@ h2 {
   border-radius: 28px;
   padding: 28px 24px 24px;
   box-shadow: 0 28px 70px rgba(27, 25, 22, 0.08);
-  align-self: center;
+  align-self: start;
 }
 
 .hero-panel h2 {
