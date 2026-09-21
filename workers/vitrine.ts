@@ -97,8 +97,11 @@ function jsonResponse(
 
 async function serveAsset(request: Request, env: PreviewEnv, pathname: string): Promise<Response> {
   const mapped = PAGE_MAP[pathname];
-  // Binding ASSETS — não fazer fetch() no próprio workers.dev (erro 1042).
+  // O binding só olha o pathname. Host do próprio workers.dev vira fetch da zona (erro 1042).
   const assetUrl = new URL(request.url);
+  assetUrl.protocol = 'https:';
+  assetUrl.hostname = 'assets.local';
+  assetUrl.port = '';
   if (mapped !== undefined) {
     assetUrl.pathname = `/${mapped}`;
     assetUrl.search = '';
