@@ -68,23 +68,31 @@ Não inventar API fiscal paralela — SEFIN/DPS continua no núcleo (`src/sefin`
 
 **Publicar** o hotsite **somente** depois do ok do **Dinheiro Bot** e do **Thiago**. DNS/Cloudflare de `sync` fica fora deste PR.
 
-### Staging preview (ephemeral, sem DNS)
+### Staging preview (`workers.dev`, sem DNS)
 
-URL pública de rascunho em `*.workers.dev` — **não** aponta `sync.plvria.com.br`, **não** é publish de produção.
+URL pública de rascunho em `*.workers.dev` — **não** aponta `sync.plvria.com.br`, **não** é publish de produção. Sem `wrangler.toml` de custom domain neste repo. Worker: `workers/vitrine.ts` + assets `web/`.
+
+**Preferido (host estável, ainda staging):** deploy nomeado numa conta Cloudflare **já claimed**. Persiste depois de 60 min, continua em `*.workers.dev` da conta, **sem** CNAME/A de `sync.plvria.com.br`.
 
 ```bash
-npx --yes wrangler@latest deploy --temporary
+npx --yes wrangler@latest login   # uma vez, conta claimed
+npm install                       # @supabase/supabase-js entra no bundle do Worker
+npx --yes wrangler@latest deploy  # SEM --temporary
 ```
 
-`--temporary` cria conta Cloudflare de preview. **Claim obrigatório em 60 min** — sem claim o Worker some e a URL passa a responder 500. Abrir o link não basta: entrar/criar conta Cloudflare e completar o fluxo.
+Hostname esperado: `https://plvria-sync-hotsite-preview.<subdomínio-da-conta>.workers.dev/`.
 
-**Caminho a host estável (ainda sem DNS canônico):**
+**Fallback efêmero** (`--temporary`) — só quando não há conta claimed no ambiente. Cria conta de preview. **Claim obrigatório em 60 min** — sem claim o Worker some e a URL passa a responder 500 (é o que matou `picturesque-vessel.workers.dev` e `chartreuse-frost.workers.dev`). Abrir o link não basta: entrar/criar conta Cloudflare e completar o fluxo no Claim URL.
 
-1. Claim do Worker temp (janela 60 min), **ou**
-2. Deploy nomeado numa conta Cloudflare própria (`wrangler deploy` **sem** `--temporary`, hostname `*.workers.dev` da conta) — continua staging, **sem** CNAME/A de `sync.plvria.com.br`, **ou**
-3. Host canônico `https://sync.plvria.com.br` só depois do ok Dinheiro Bot + Thiago (DNS/proxy fora deste PR).
+```bash
+npm install
+npx --yes wrangler@latest deploy --temporary
+# ou: npm run preview:cf
+```
 
-Sem `wrangler.toml` de custom domain neste repo. Worker: `workers/vitrine.ts` + assets `web/`. Preview conhecido (enquanto o claim valer): `https://plvria-sync-hotsite-preview.chartreuse-frost.workers.dev/`.
+Preview conhecido (enquanto o claim valer; commit `f6588b9` polish #8): `https://plvria-sync-hotsite-preview.fate-can.workers.dev/`.
+
+Host canônico `https://sync.plvria.com.br` só depois do ok Dinheiro Bot + Thiago (DNS/proxy fora deste PR).
 
 **Env do preview** (`wrangler.jsonc` `vars` — stubs para o app bootar):
 
