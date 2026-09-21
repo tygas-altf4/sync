@@ -1,21 +1,27 @@
+/* Tokens creme-cinema — canvas claro, um acento, sem neon. */
 :root {
   color-scheme: light only;
   --paper: #f3efe6;
   --paper-2: #e7dfd0;
+  --paper-lift: #fffaf3;
   --ink: #1b1916;
   --ink-soft: #4f4a43;
   --line: #d2c8b6;
-  --copper: #b5441f;
-  --copper-dark: #8a3216;
-  --forest: #243d32;
+  --accent: #b5441f; /* terracota Plvria já no sistema — único acento; sem neon */
+  --accent-dark: #8a3216;
+  --copper: var(--accent);
+  --copper-dark: var(--accent-dark);
+  --forest: #243d32; /* superfície calma (Reforma 2026), não acento */
   --forest-mid: #2f5344;
   --stamp: #c4a574;
   --ok: #245c3a;
   --err: #8c2418;
-  --shadow: 0 18px 50px rgba(27, 25, 22, 0.08);
-  --sans: "IBM Plex Sans", "Segoe UI", sans-serif;
-  --serif: "Fraunces", "Iowan Old Style", Georgia, serif;
-  --max: 1120px;
+  --shadow: 0 24px 60px rgba(27, 25, 22, 0.08);
+  --sans: "Geist", "IBM Plex Sans", "Segoe UI", sans-serif;
+  --display: "Geist", "IBM Plex Sans", "Segoe UI", sans-serif;
+  --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --max: 1180px;
+  --radius: 16px;
 }
 
 *,
@@ -43,10 +49,11 @@ body {
   margin: 0;
   color: #1b1916;
   background-color: #f3efe6;
-  background-image: linear-gradient(180deg, rgba(36, 61, 50, 0.035), #f3efe6 28%);
+  background-image: linear-gradient(180deg, rgba(181, 68, 31, 0.04), #f3efe6 32%);
   font-family: var(--sans);
   font-size: 17px;
   line-height: 1.55;
+  letter-spacing: -0.011em;
 }
 
 body::before {
@@ -54,13 +61,13 @@ body::before {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  opacity: 0.45;
+  opacity: 0.35;
   background-image:
-    linear-gradient(rgba(36, 61, 50, 0.035) 1px, rgba(243, 239, 230, 0) 1px),
-    linear-gradient(90deg, rgba(36, 61, 50, 0.035) 1px, rgba(243, 239, 230, 0) 1px);
-  background-size: 28px 28px;
-  -webkit-mask-image: linear-gradient(180deg, #000 0 40%, transparent 90%);
-  mask-image: linear-gradient(180deg, #000 0 40%, transparent 90%);
+    linear-gradient(rgba(27, 25, 22, 0.03) 1px, rgba(243, 239, 230, 0) 1px),
+    linear-gradient(90deg, rgba(27, 25, 22, 0.03) 1px, rgba(243, 239, 230, 0) 1px);
+  background-size: 36px 36px;
+  -webkit-mask-image: linear-gradient(180deg, #000 0 36%, transparent 82%);
+  mask-image: linear-gradient(180deg, #000 0 36%, transparent 82%);
   z-index: 0;
 }
 
@@ -92,8 +99,8 @@ img {
   position: sticky;
   top: 0;
   z-index: 4;
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
   background: #f3efe6;
   background: rgba(243, 239, 230, 0.92);
   border-bottom: 1px solid var(--line);
@@ -104,7 +111,7 @@ img {
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  min-height: 68px;
+  min-height: 72px;
 }
 
 .brand {
@@ -115,14 +122,18 @@ img {
 }
 
 .brand-mark {
-  font-family: var(--serif);
-  font-weight: 620;
+  font-family: var(--display);
+  font-weight: 650;
   font-size: 22px;
+  letter-spacing: -0.04em;
 }
 
 .brand-sub {
-  color: var(--ink-soft);
-  font-size: 13px;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .nav {
@@ -153,13 +164,13 @@ img {
 }
 
 .btn {
-  background: var(--copper);
+  background: var(--accent);
   color: #fffaf5;
-  border-color: var(--copper-dark);
+  border-color: var(--accent-dark);
 }
 
 .btn:hover {
-  background: var(--copper-dark);
+  background: var(--accent-dark);
 }
 
 .btn-ghost {
@@ -186,22 +197,69 @@ img {
 .hero {
   position: relative;
   z-index: 1;
-  padding: 56px 0 48px;
+  padding: 40px 0 56px;
 }
 
 .hero-grid {
   display: grid;
-  grid-template-columns: 1.05fr 0.95fr;
-  gap: 40px;
+  grid-template-columns: 1.12fr 0.88fr;
+  gap: 48px;
   align-items: start;
 }
 
-/* Prova social da marca guarda-chuva — não atribuir os 15 anos ao produto fiscal. */
+.hero-copy {
+  position: relative;
+}
+
+.hero-visual {
+  position: relative;
+  z-index: 0;
+  margin: 0 0 18px;
+  height: 112px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: #fffaf3;
+  border: 1px solid var(--line);
+  pointer-events: none;
+}
+
+.hero-still,
+.hero-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hero-canvas {
+  display: none;
+  position: absolute;
+  inset: 0;
+}
+
+.hero-canvas.is-on {
+  display: block;
+}
+
+.hero-copy-inner {
+  position: relative;
+  z-index: 1;
+}
+
+/* Prova social da marca guarda-chuva — não atribuir os 15 anos ao serviço NFS-e. */
+.hero-pills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 16px;
+}
+
 .proof-badge {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin: 0 0 18px;
+  margin: 0;
   padding: 6px 12px 6px 10px;
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -218,7 +276,7 @@ img {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--copper);
+  background: var(--accent);
   flex-shrink: 0;
 }
 
@@ -226,36 +284,38 @@ img {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
-  letter-spacing: 0.08em;
+  font-size: 12px;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--forest-mid);
   margin-bottom: 16px;
+  font-weight: 600;
 }
 
 .eyebrow::before {
   content: "";
   width: 22px;
   height: 2px;
-  background: var(--copper);
+  background: var(--accent);
 }
 
 h1,
 h2,
 h3 {
-  font-family: var(--serif);
-  font-weight: 560;
-  letter-spacing: -0.03em;
-  line-height: 1.12;
+  font-family: var(--display);
+  font-weight: 600;
+  letter-spacing: -0.045em;
+  line-height: 1.02;
   margin: 0 0 16px;
 }
 
 h1 {
-  font-size: clamp(2.4rem, 5vw, 4.15rem);
+  font-size: clamp(2.7rem, 6.4vw, 5.15rem);
+  max-width: 14ch;
 }
 
 h2 {
-  font-size: clamp(2rem, 3.4vw, 2.8rem);
+  font-size: clamp(2rem, 3.6vw, 3rem);
 }
 
 .lede,
@@ -269,10 +329,15 @@ h2 {
   margin: 0 0 8px;
 }
 
+.hero-lead strong {
+  color: var(--ink);
+  font-weight: 650;
+}
+
 .free50-chip {
   display: inline-flex;
   align-items: center;
-  margin: 18px 0 0;
+  margin: 0;
   padding: 8px 14px;
   border-radius: 999px;
   background: var(--forest);
@@ -299,11 +364,12 @@ h2 {
 .hero-stats div {
   background: #fffaf3;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 10px;
   padding: 10px 12px;
 }
 
 .hero-stats dt {
+  font-family: var(--mono);
   font-size: 11px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -321,25 +387,28 @@ h2 {
 #faq,
 #reforma,
 #como-funciona,
-#contador {
+#contador,
+#nfse {
   scroll-margin-top: 88px;
 }
 
 .hero-panel {
   background: #fffaf3;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 24px 22px 22px;
+  border-radius: var(--radius);
+  padding: 26px 24px 24px;
   box-shadow: var(--shadow);
 }
 
 .hero-panel h2 {
-  font-size: 1.65rem;
+  font-size: 1.7rem;
   margin-bottom: 6px;
+  max-width: none;
+  letter-spacing: -0.03em;
 }
 
 .hero-panel .ticket-kicker {
-  color: var(--copper-dark);
+  color: var(--accent-dark);
 }
 
 .trust {
@@ -380,6 +449,65 @@ h2 {
   font-size: 14px;
 }
 
+/* Bento assimétrico das superfícies NFS-e (serviço). */
+.bento {
+  position: relative;
+  z-index: 1;
+  padding: 88px 0 40px;
+}
+
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 36px;
+}
+
+.bento-card {
+  background: #fffaf3;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 24px 22px 22px;
+  min-height: 160px;
+  grid-column: span 2;
+}
+
+.bento-card.bento-hero {
+  grid-column: span 4;
+  grid-row: span 2;
+  background:
+    linear-gradient(145deg, rgba(181, 68, 31, 0.08), transparent 42%),
+    #fffaf3;
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.bento-card.bento-wide {
+  grid-column: span 4;
+}
+
+.bento-kicker {
+  margin: 0 0 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.bento-card h3 {
+  font-size: 1.45rem;
+  margin-bottom: 8px;
+}
+
+.bento-card p:not(.bento-kicker) {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
 .ticket {
   background: var(--forest);
   color: var(--paper);
@@ -402,7 +530,7 @@ h2 {
 }
 
 .ticket .price {
-  font-family: var(--serif);
+  font-family: var(--display);
   font-size: 42px;
   margin: 8px 0 28px;
 }
@@ -432,7 +560,7 @@ h2 {
   z-index: 1;
   background: var(--forest);
   color: var(--paper);
-  padding: 72px 0;
+  padding: 88px 0;
 }
 
 .eyebrow-on-dark {
@@ -461,12 +589,12 @@ h2 {
   background: #29483c;
   border: 1px solid rgba(243, 239, 230, 0.1);
   padding: 20px 20px 18px;
-  border-radius: 6px;
+  border-radius: 12px;
 }
 
 .reforma-points span {
   display: block;
-  font-family: var(--serif);
+  font-family: var(--display);
   color: var(--stamp);
   font-size: 14px;
   margin-bottom: 8px;
@@ -475,7 +603,7 @@ h2 {
 .how {
   position: relative;
   z-index: 1;
-  padding: 84px 0;
+  padding: 88px 0;
 }
 
 .steps {
@@ -490,12 +618,14 @@ h2 {
   border: 1px solid var(--line);
   padding: 22px 20px 20px;
   min-height: 210px;
+  border-radius: 14px;
 }
 
 .step-num {
-  font-family: var(--serif);
+  font-family: var(--display);
   font-size: 2rem;
-  color: var(--copper);
+  color: var(--accent);
+  letter-spacing: -0.06em;
 }
 
 .step h3 {
@@ -534,6 +664,7 @@ h2 {
   display: flex;
   flex-direction: column;
   min-height: 100%;
+  border-radius: 14px;
 }
 
 .plan.featured {
@@ -555,11 +686,12 @@ h2 {
 
 .plan-code {
   margin: 0 0 4px;
+  font-family: var(--mono);
   font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-soft);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .plan.featured .plan-code {
@@ -572,9 +704,10 @@ h2 {
 }
 
 .plan .amount {
-  font-family: var(--serif);
+  font-family: var(--display);
   font-size: 2rem;
   margin: 8px 0 4px;
+  letter-spacing: -0.04em;
 }
 
 .plan .quota {
@@ -632,7 +765,7 @@ h2 {
 .contador-card {
   background: var(--forest);
   color: var(--paper);
-  border-radius: 8px;
+  border-radius: var(--radius);
   padding: 28px 24px 24px;
   box-shadow: var(--shadow);
 }
@@ -654,7 +787,7 @@ h2 {
 .faq-list details {
   background: #fffaf3;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 10px;
   padding: 14px 18px;
 }
 
@@ -677,8 +810,8 @@ h2 {
 .close-cta {
   background: var(--forest);
   color: var(--paper);
-  border-radius: 8px;
-  padding: 40px 36px;
+  border-radius: var(--radius);
+  padding: 48px 40px;
   box-shadow: var(--shadow);
 }
 
@@ -738,7 +871,7 @@ textarea {
   background: #fff;
   color: #1b1916;
   color-scheme: light;
-  border-radius: 4px;
+  border-radius: 8px;
 }
 
 input:focus,
@@ -850,6 +983,7 @@ input:disabled {
   padding: 24px;
   display: grid;
   gap: 14px;
+  border-radius: 14px;
 }
 
 .captcha-slot {
@@ -869,7 +1003,7 @@ input:disabled {
 
 .totp-secret {
   display: block;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--mono);
   letter-spacing: 0.06em;
   font-size: 14px;
   background: #f3efe6;
@@ -902,9 +1036,7 @@ input:disabled {
   .auth-grid {
     grid-template-columns: 1fr;
   }
-}
 
-@media (max-width: 960px) {
   .hero-grid,
   .cta-panel,
   .reforma-points,
@@ -913,8 +1045,17 @@ input:disabled {
   .field-row,
   .hero-stats,
   .trust-row,
-  .faq-grid {
+  .faq-grid,
+  .bento-grid {
     grid-template-columns: 1fr;
+  }
+
+  .bento-card,
+  .bento-card.bento-hero,
+  .bento-card.bento-wide {
+    grid-column: span 1;
+    grid-row: auto;
+    min-height: 0;
   }
 
   .hero-stats {
@@ -927,9 +1068,20 @@ input:disabled {
 
   .hero,
   .how,
-  .reforma {
-    padding-top: 36px;
+  .reforma,
+  .bento {
+    padding-top: 32px;
     padding-bottom: 40px;
+  }
+
+  .hero-visual {
+    height: 88px;
+    margin-bottom: 14px;
+  }
+
+  h1 {
+    font-size: clamp(2.15rem, 11vw, 3.1rem);
+    max-width: none;
   }
 
   /* Barra fixa: padding no body pra não cobrir stats / footer. */
@@ -947,10 +1099,20 @@ input:disabled {
     justify-content: center;
     margin: 0;
     padding: 14px 16px calc(14px + env(safe-area-inset-bottom, 0px));
-    background: var(--copper);
-    border-top: 1px solid var(--copper-dark);
+    background: var(--accent);
+    border-top: 1px solid var(--accent-dark);
     color: #fffaf5;
     text-decoration: none;
     font-weight: 600;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .hero-canvas {
+    display: none;
   }
 }

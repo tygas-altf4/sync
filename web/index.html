@@ -8,17 +8,17 @@
     <style>
       html, body { background: #f3efe6; color: #1b1916; color-scheme: light only; }
     </style>
-    <title>Plvria Sync — NFS-e Nacional (SyncNFe)</title>
+    <title>Plvria — NFS-e Nacional (serviço)</title>
     <meta
       name="description"
-      content="Emita NFS-e Nacional e municipal sem burocracia. Empresa e contador. Free50 sem cartão. Marca Plvria — 15 anos no mercado."
+      content="Emita NFS-e Nacional — nota de serviço, não NF-e de mercadoria. Empresa e contador. Free50 sem cartão. Marca Plvria — 15 anos no mercado."
     />
     <meta name="robots" content="noindex, nofollow" />
     <link rel="canonical" href="https://sync.plvria.com.br/" />
-    <meta property="og:title" content="Plvria Sync — NFS-e Nacional" />
+    <meta property="og:title" content="Plvria — NFS-e Nacional" />
     <meta
       property="og:description"
-      content="Emita NFS-e Nacional e municipal sem burocracia. Free50 sem cartão. Marca Plvria — 15 anos no mercado."
+      content="NFS-e Nacional de serviço, não NF-e de mercadoria. Free50 sem cartão. Marca Plvria — 15 anos no mercado."
     />
     <meta property="og:url" content="https://sync.plvria.com.br/" />
     <meta property="og:locale" content="pt_BR" />
@@ -26,7 +26,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,620&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/assets/landing.css" />
@@ -38,8 +38,8 @@
     <header class="site-header">
       <div class="wrap">
         <a class="brand" href="/">
-          <span class="brand-mark">Plvria Sync</span>
-          <span class="brand-sub">SyncNFe</span>
+          <span class="brand-mark">Plvria</span>
+          <span class="brand-sub">NFS-e</span>
         </a>
         <nav class="nav" aria-label="Seções">
           <a class="hide-sm" href="#reforma">Reforma 2026</a>
@@ -56,37 +56,53 @@
       <section class="hero" id="topo">
         <div class="wrap hero-grid">
           <div class="hero-copy">
-            <p class="proof-badge">Marca Plvria — 15 anos no mercado</p>
-            <p class="eyebrow">Empresa e contador · NFS-e Nacional e municipal</p>
-            <h1>Emita NFS-e Nacional e municipal sem burocracia</h1>
-            <p class="hero-lead">
-              Um fluxo pra quem emite e pra quem acompanha. Canal nacional (SEFIN); município
-              que já está no padrão Nacional entra no mesmo caminho.
-            </p>
-            <p class="free50-chip">Free50 · 50 notas · R$&nbsp;0 · sem cartão</p>
-            <div class="hero-actions">
-              <a class="btn" href="#comecar">Começar grátis</a>
-              <a class="btn-ghost" href="#como-funciona">Ver como funciona</a>
+              <div class="hero-visual" aria-hidden="true">
+              <img
+                class="hero-still"
+                src="/assets/hero-still.svg"
+                alt=""
+                width="960"
+                height="420"
+                decoding="async"
+              />
+              <canvas id="hero-canvas" class="hero-canvas" width="960" height="420"></canvas>
             </div>
-            <p class="micro">Sem cartão. Cota free pra validar no seu fluxo real.</p>
-            <dl class="hero-stats" aria-label="Planos em resumo">
-              <div>
-                <dt>Free50</dt>
-                <dd>50 · R$&nbsp;0</dd>
+            <div class="hero-copy-inner">
+              <div class="hero-pills">
+                <p class="proof-badge">Marca Plvria — 15 anos no mercado</p>
+                <p class="free50-chip">Free50 · 50 notas · R$&nbsp;0 · sem cartão</p>
               </div>
-              <div>
-                <dt>starter89</dt>
-                <dd>150 · R$&nbsp;89</dd>
+              <p class="eyebrow">Empresa e contador · NFS-e Nacional (serviço)</p>
+              <h1>Emita NFS-e Nacional e municipal sem burocracia</h1>
+              <p class="hero-lead">
+                NFS-e é nota de <strong>serviço</strong> — não confundir com NF-e de mercadoria.
+                Um fluxo pra quem emite e pra quem acompanha. Canal nacional (SEFIN); município
+                que já está no padrão Nacional entra no mesmo caminho.
+              </p>
+              <div class="hero-actions">
+                <a class="btn" href="#comecar">Começar grátis</a>
+                <a class="btn-ghost" href="#como-funciona">Ver como funciona</a>
               </div>
-              <div>
-                <dt>pro249</dt>
-                <dd>1000 · R$&nbsp;249</dd>
-              </div>
-              <div>
-                <dt>scale549</dt>
-                <dd>4000 · R$&nbsp;549</dd>
-              </div>
-            </dl>
+              <p class="micro">Sem cartão. Cota free pra validar no seu fluxo real.</p>
+              <dl class="hero-stats" aria-label="Planos em resumo">
+                <div>
+                  <dt>Free50</dt>
+                  <dd>50 · R$&nbsp;0</dd>
+                </div>
+                <div>
+                  <dt>Starter</dt>
+                  <dd>150 · R$&nbsp;89</dd>
+                </div>
+                <div>
+                  <dt>Pro</dt>
+                  <dd>1000 · R$&nbsp;249</dd>
+                </div>
+                <div>
+                  <dt>Scale</dt>
+                  <dd>4000 · R$&nbsp;549</dd>
+                </div>
+              </dl>
+            </div>
           </div>
           <aside class="hero-panel" id="comecar" aria-labelledby="form-heading">
             <p class="ticket-kicker">Começar grátis</p>
@@ -168,7 +184,7 @@
         <div class="wrap trust-row">
           <p>
             <strong>Marca Plvria — 15 anos no mercado</strong>
-            <span>A idade é da marca. O produto fiscal é Plvria Sync.</span>
+            <span>A idade é da marca. NFS-e Nacional é o serviço — não NF-e de mercadoria.</span>
           </p>
           <p>
             <strong>Certificado A1</strong>
@@ -182,6 +198,54 @@
             <strong>Empresa e contador</strong>
             <span>Mesmo status da nota, no mesmo lugar.</span>
           </p>
+        </div>
+      </section>
+
+      <section class="bento" id="nfse" aria-labelledby="bento-heading">
+        <div class="wrap">
+          <p class="eyebrow">NFS-e · serviço</p>
+          <h2 id="bento-heading">Do cadastro ao status, no mesmo lugar</h2>
+          <p class="lede">
+            Recorte de nota de serviço (NFS-e Nacional). Sem NF-e de mercadoria neste produto.
+          </p>
+          <div class="bento-grid">
+            <article class="bento-card bento-hero">
+              <p class="bento-kicker">Canal nacional</p>
+              <h3>NFS-e Nacional no SEFIN</h3>
+              <p>
+                Emissão no padrão nacional. Município que já aderiu segue o mesmo caminho —
+                sem protocolo paralelo nesta página.
+              </p>
+            </article>
+            <article class="bento-card">
+              <p class="bento-kicker">Entrada</p>
+              <h3>Free50</h3>
+              <p>50 notas · R$ 0 · sem cartão. Valida no CNPJ real.</p>
+            </article>
+            <article class="bento-card">
+              <p class="bento-kicker">Cofre</p>
+              <h3>Certificado A1</h3>
+              <p>Referência no servidor. PFX/PEM nunca no front.</p>
+            </article>
+            <article class="bento-card">
+              <p class="bento-kicker">Escritório</p>
+              <h3>Mesmo status</h3>
+              <p>Empresa e contador vêem a nota no mesmo lugar.</p>
+            </article>
+            <article class="bento-card">
+              <p class="bento-kicker">Cota</p>
+              <h3>Uso visível</h3>
+              <p>Usado e limite no mesmo período. Sobe de plano quando pedir.</p>
+            </article>
+            <article class="bento-card bento-wide">
+              <p class="bento-kicker">Calendário</p>
+              <h3>Reforma 2026 no mesmo produto</h3>
+              <p>
+                O padrão nacional e o Simples cabem aqui. Sem pressa artificial — o bloco
+                calmo abaixo detalha a prontidão.
+              </p>
+            </article>
+          </div>
         </div>
       </section>
 
@@ -242,13 +306,12 @@
         <div class="wrap">
           <h2>Preço à vista. Cota no nome do plano.</h2>
           <p class="lede">
-            Free50 → starter89 → pro249 → scale549. 50 / 150 / 1000 / 4000 notas. R$ 0 / 89 /
-            249 / 549. Pagos não cobram aqui.
+            Free50 → Starter → Pro → Scale. 50 / 150 / 1000 / 4000 notas. R$ 0 / 89 / 249 /
+            549. Pagos não cobram aqui.
           </p>
           <div class="plan-grid">
             <article class="plan featured">
               <div class="badge">Entrada</div>
-              <p class="plan-code">free50</p>
               <h3>Free50</h3>
               <div class="amount">R$ 0</div>
               <div class="quota">50 emissões / mês</div>
@@ -256,7 +319,6 @@
               <a class="btn" href="#comecar" data-plan="free50">Começar grátis</a>
             </article>
             <article class="plan">
-              <p class="plan-code">starter89</p>
               <h3>Starter</h3>
               <div class="amount">R$ 89</div>
               <div class="quota">150 emissões / mês</div>
@@ -266,7 +328,6 @@
               </button>
             </article>
             <article class="plan">
-              <p class="plan-code">pro249</p>
               <h3>Pro</h3>
               <div class="amount">R$ 249</div>
               <div class="quota">1000 emissões / mês</div>
@@ -276,7 +337,6 @@
               </button>
             </article>
             <article class="plan">
-              <p class="plan-code">scale549</p>
               <h3>Scale</h3>
               <div class="amount">R$ 549</div>
               <div class="quota">4000 emissões / mês</div>
@@ -306,9 +366,16 @@
               <details>
                 <summary>Os planos pagos cobram aqui?</summary>
                 <p>
-                  Não. Starter (starter89, R$ 89 / 150), Pro (pro249, R$ 249 / 1000) e Scale
-                  (scale549, R$ 549 / 4000) usam o CTA <strong>Falar com upgrade</strong> —
+                  Não. Starter (R$ 89 / 150), Pro (R$ 249 / 1000) e Scale (R$ 549 / 4000)
+                  usam o CTA <strong>Falar com upgrade</strong> —
                   handoff, sem cobrança nesta UI.
+                </p>
+              </details>
+              <details>
+                <summary>NFS-e ou NF-e?</summary>
+                <p>
+                  <strong>NFS-e</strong> — nota fiscal de <strong>serviço</strong> (Nacional /
+                  SEFIN). Não é NF-e de mercadoria.
                 </p>
               </details>
               <details>
@@ -319,10 +386,10 @@
                 </p>
               </details>
               <details>
-                <summary>A marca Plvria tem 15 anos — e o Sync?</summary>
+                <summary>A marca Plvria tem 15 anos — e a NFS-e?</summary>
                 <p>
-                  Os 15 anos são da <strong>marca Plvria</strong>. Plvria Sync / SyncNFe é o
-                  produto de NFS-e Nacional — não herda essa idade.
+                  Os 15 anos são da <strong>marca Plvria</strong>. NFS-e Nacional é o serviço
+                  de nota de serviço — não herda essa idade.
                 </p>
               </details>
               <details>
@@ -364,7 +431,7 @@
     <footer class="site-footer" id="contato">
       <div class="wrap footer-grid">
         <div>
-          <strong>Plvria Sync</strong>
+          <strong>Plvria</strong>
           <p class="micro">
             Contato:
             <a class="footer-email" href="mailto:plvria@plvria.com.br">plvria@plvria.com.br</a>
@@ -374,7 +441,7 @@
             conta em <a href="/cadastro">/cadastro</a>. Já tem acesso?
             <a href="/entrar">/entrar</a>.
           </p>
-          <p class="micro">Empresas e contadores · SyncNFe · sync.plvria.com.br</p>
+          <p class="micro">Empresas e contadores · NFS-e Nacional · sync.plvria.com.br</p>
         </div>
         <div>
           <a href="mailto:plvria@plvria.com.br">Contato</a>

@@ -137,8 +137,9 @@ async function falarUpgrade(planCode) {
     /* handoff é stub se o banco não estiver no ar */
   }
   window.location.hash = 'comecar';
+  const planLabel = { starter89: 'Starter', pro249: 'Pro', scale549: 'Scale' }[planCode] ?? planCode;
   setStatus(
-    `Upgrade ${planCode} registrado pra o Dinheiro Bot. Sem cobrança nesta página — deixa seu contato no form.`,
+    `Upgrade ${planLabel} registrado pra o Dinheiro Bot. Sem cobrança nesta página — deixa seu contato no form.`,
     'ok',
   );
 }
@@ -163,3 +164,155 @@ for (const link of document.querySelectorAll('[data-perfil]')) {
     if (perfil && value) perfil.value = value;
   });
 }
+
+/**
+ * Loop boomerang leve do fluxo de NFS-e. Sem mix-blend (lama no creme).
+ * Pausa fora da viewport; desliga em low-end / reduced-motion / save-data.
+ */
+function shouldRunHeroCanvas() {
+  const canvas = document.getElementById('hero-canvas');
+  if (!(canvas instanceof HTMLCanvasElement)) return false;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+  const connection = navigator.connection;
+  if (connection?.saveData) return false;
+  if (window.matchMedia('(max-width: 720px)').matches) return false;
+  const cores = navigator.hardwareConcurrency ?? 4;
+  if (cores <= 2) return false;
+  return true;
+}
+
+function mountHeroCanvas() {
+  const canvas = document.getElementById('hero-canvas');
+  if (!(canvas instanceof HTMLCanvasElement) || !shouldRunHeroCanvas()) return;
+
+  const ctx = canvas.getContext('2d', { alpha: true });
+  if (!ctx) return;
+
+  const paper = '#fffaf3';
+  const line = '#d2c8b6';
+  const accent = '#b5441f';
+  const ink = '#1b1916';
+  let playing = false;
+  let inView = false;
+  let raf = 0;
+  let start = 0;
+
+  function resize() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const width = Math.max(1, Math.round(rect.width * dpr));
+    const height = Math.max(1, Math.round(rect.height * dpr));
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width;
+      canvas.height = height;
+    }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function pingPong(timeMs) {
+    const cycle = 9000;
+    const t = (timeMs % (cycle * 2)) / cycle;
+    return t <= 1 ? t : 2 - t;
+  }
+
+  function drawCard(x, y, w, h, fill, bar) {
+    ctx.beginPath();
+    if (typeof ctx.roundRect === 'function') {
+      ctx.roundRect(x, y, w, h, 10);
+    } else {
+      ctx.rect(x, y, w, h);
+    }
+    ctx.fillStyle = fill;
+    ctx.fill();
+    ctx.strokeStyle = line;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = bar;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === 'function') {
+      ctx.roundRect(x + 14, y + 16, w * 0.38, 7, 4);
+    } else {
+      ctx.rect(x + 14, y + 16, w * 0.38, 7);
+    }
+    ctx.fill();
+    ctx.fillStyle = 'rgba(79, 74, 67, 0.28)';
+    ctx.fillRect(x + 14, y + 34, w * 0.62, 5);
+    ctx.fillRect(x + 14, y + 46, w * 0.48, 5);
+  }
+
+  function frame(now) {
+    if (!playing) return;
+    const t = pingPong(now - start);
+    const rect = canvas.getBoundingClientRect();
+    const w = rect.width;
+    const h = rect.height;
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = paper;
+    ctx.fillRect(0, 0, w, h);
+
+    ctx.beginPath();
+    ctx.moveTo(w * 0.06, h * 0.72);
+    ctx.bezierCurveTo(w * 0.22, h * 0.62, w * 0.3, h * 0.2, w * 0.48, h * 0.32);
+    ctx.bezierCurveTo(w * 0.66, h * 0.46, w * 0.78, h * 0.22, w * 0.94, h * 0.3);
+    ctx.strokeStyle = line;
+    ctx.setLineDash([5, 8]);
+    ctx.lineWidth = 1.4;
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.beginPath();
+    ctx.moveTo(w * 0.08, h * 0.3);
+    ctx.bezierCurveTo(w * 0.24, h * 0.12, w * 0.34, h * 0.62, w * 0.52, h * 0.54);
+    ctx.bezierCurveTo(w * 0.7, h * 0.44, w * 0.82, h * 0.7, w * 0.94, h * 0.58);
+    ctx.strokeStyle = 'rgba(181, 68, 31, 0.5)';
+    ctx.lineWidth = 1.6;
+    ctx.stroke();
+
+    const notes = [
+      { x: 0.08 + t * 0.18, y: 0.16, w: 0.2, h: 0.42, fill: '#f3efe6', bar: ink },
+      { x: 0.38 + (1 - t) * 0.08, y: 0.38, w: 0.24, h: 0.48, fill: paper, bar: '#243d32' },
+      { x: 0.68 + t * 0.06, y: 0.12, w: 0.22, h: 0.46, fill: '#243d32', bar: '#c4a574' },
+    ];
+    for (const note of notes) {
+      drawCard(note.x * w, note.y * h, note.w * w, note.h * h, note.fill, note.bar);
+    }
+
+    ctx.fillStyle = accent;
+    ctx.beginPath();
+    ctx.arc(w * (0.14 + t * 0.7), h * (0.68 - t * 0.22), 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    raf = window.requestAnimationFrame(frame);
+  }
+
+  function play() {
+    if (playing || document.hidden || !inView) return;
+    playing = true;
+    canvas.classList.add('is-on');
+    start = performance.now();
+    resize();
+    raf = window.requestAnimationFrame(frame);
+  }
+
+  function pause() {
+    playing = false;
+    window.cancelAnimationFrame(raf);
+  }
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      inView = entries.some((entry) => entry.isIntersecting && entry.intersectionRatio > 0.15);
+      if (inView) play();
+      else pause();
+    },
+    { threshold: [0, 0.15, 0.4] },
+  );
+  observer.observe(canvas.parentElement ?? canvas);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) pause();
+    else play();
+  });
+  window.addEventListener('resize', resize, { passive: true });
+}
+
+mountHeroCanvas();

@@ -52,7 +52,7 @@ const LIGHT_HTML_HEADERS = {
 
 /** Fallback se o binding ASSETS falhar — canvas claro, sem depender de CSS. */
 const LIGHT_ERROR_HTML =
-  '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light only"><style>html,body{background:#f3efe6;color:#1b1916;margin:0;padding:24px;font-family:sans-serif}</style><title>Plvria Sync</title></head><body><p>Não foi possível carregar a página agora.</p></body></html>';
+  '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light only"><style>html,body{background:#f3efe6;color:#1b1916;margin:0;padding:24px;font-family:sans-serif}</style><title>Plvria</title></head><body><p>Não foi possível carregar a página agora.</p></body></html>';
 
 let runtime: unknown = null;
 

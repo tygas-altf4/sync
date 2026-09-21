@@ -44,10 +44,17 @@ describe('landing copy', () => {
     assert.match(landing, /sem cartão/);
     assert.match(landing, /Começar grátis/);
     assert.match(landing, /Falar com upgrade/);
-    assert.match(landing, /free50/);
-    assert.match(landing, /starter89/);
-    assert.match(landing, /pro249/);
-    assert.match(landing, /scale549/);
+    assert.match(landing, /Free50/);
+    assert.match(landing, />Starter</);
+    assert.match(landing, />Pro</);
+    assert.match(landing, />Scale</);
+    assert.match(landing, /data-upgrade="starter89"/);
+    assert.match(landing, /data-upgrade="pro249"/);
+    assert.match(landing, /data-upgrade="scale549"/);
+    assert.match(landing, /data-plan="free50"/);
+    assert.doesNotMatch(landing, />starter89</);
+    assert.doesNotMatch(landing, />pro249</);
+    assert.doesNotMatch(landing, />scale549</);
     assert.match(landing, /R\$ 0/);
     assert.match(landing, /R\$ 89/);
     assert.match(landing, /R\$ 249/);
@@ -81,11 +88,44 @@ describe('landing copy', () => {
     }
   });
 
-  it('prova social é da marca Plvria, não do produto fiscal', () => {
+  it('prova social é da marca Plvria, não do serviço NFS-e', () => {
     assert.match(landing, /Marca Plvria — 15 anos no mercado/);
     assert.doesNotMatch(landing, /SyncNFe[^<]{0,80}15 anos/);
     assert.doesNotMatch(landing, /Plvria Sync[^<]{0,80}15 anos/);
     assert.match(landing, /não herda essa idade/);
+  });
+
+  it('copy pública é Plvria + NFS-e (serviço), sem Sync/SyncNFe', () => {
+    const pages = [
+      'index.html',
+      'cadastro.html',
+      'entrar.html',
+      'conta.html',
+      'privacidade.html',
+      'termos.html',
+    ];
+    for (const page of pages) {
+      const html = readFileSync(path.join(ROOT, 'web', page), 'utf8');
+      const publicCopy = html
+        .replace(/https:\/\/sync\.plvria\.com\.br/g, '')
+        .replace(/sync\.plvria\.com\.br/g, '');
+      assert.doesNotMatch(publicCopy, /Plvria Sync/);
+      assert.doesNotMatch(publicCopy, /SyncNFe/);
+      assert.doesNotMatch(publicCopy, /\bSync\b/);
+    }
+    assert.match(landing, /nota de <strong>serviço<\/strong>/);
+    assert.match(landing, /não confundir com NF-e de mercadoria/);
+    assert.match(landing, /NFS-e<\/strong> — nota fiscal de <strong>serviço/);
+    assert.match(landing, /og:title" content="Plvria — NFS-e Nacional"/);
+    assert.match(landing, /<title>Plvria — NFS-e Nacional \(serviço\)<\/title>/);
+    assert.match(landing, /family=Geist/);
+    assert.match(landing, /hero-still\.svg/);
+    assert.match(landing, /id="hero-canvas"/);
+    assert.match(landing, /class="bento-grid"/);
+    const css = readFileSync(path.join(ROOT, 'web/assets/landing.css'), 'utf8');
+    assert.match(css, /--accent:\s*#b5441f/);
+    assert.doesNotMatch(css, /#20D487/i);
+    assert.doesNotMatch(css, /mix-blend-mode/);
   });
 });
 
@@ -271,7 +311,7 @@ describe('HTTP vitrine', () => {
     const cadastro = await fetch(`${base}/cadastro`);
     assert.equal(cadastro.status, 200);
     const cadastroHtml = await cadastro.text();
-    assert.match(cadastroHtml, /Criar conta SyncNFe/);
+    assert.match(cadastroHtml, /Criar conta Plvria/);
     assert.match(cadastroHtml, /2FA \(TOTP\)/);
     assert.match(cadastroHtml, /og:url" content="https:\/\/sync\.plvria\.com\.br\/cadastro"/);
     const entrar = await fetch(`${base}/entrar`);
