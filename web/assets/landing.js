@@ -287,6 +287,7 @@ function mountHeroCanvas() {
   function play() {
     if (playing || document.hidden || !inView) return;
     playing = true;
+    canvas.classList.add('is-on');
     start = performance.now();
     resize();
     raf = window.requestAnimationFrame(frame);
