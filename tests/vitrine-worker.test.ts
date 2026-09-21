@@ -18,6 +18,7 @@ function previewEnv(options: { failAssets?: boolean; staging?: string } = {}) {
           throw new Error('assets_down');
         }
         const url = new URL(request.url);
+        assert.equal(url.hostname, 'assets.local');
         if (url.pathname.endsWith('landing.css')) {
           return new Response(CSS, {
             status: 200,

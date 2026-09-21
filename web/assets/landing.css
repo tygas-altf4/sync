@@ -290,18 +290,20 @@ body.page-home .brand-mark {
   position: relative;
   flex: 1;
   display: flex;
+  flex-direction: column;
   border-radius: 28px;
   overflow: hidden;
   background: #f3efe6;
   border: 1px solid var(--line);
 }
 
+/* Faixa de cinema: o still fica visível; o texto e o CTA sentam embaixo, na dobra. */
 .hero-visual {
-  position: absolute;
-  inset: 0;
+  position: relative;
   z-index: 0;
+  flex: 0 0 auto;
+  height: clamp(188px, 26vw, 268px);
   margin: 0;
-  height: auto;
   border: none;
   border-radius: 0;
   overflow: hidden;
@@ -309,24 +311,35 @@ body.page-home .brand-mark {
   pointer-events: none;
 }
 
+/* Moldura fina dentro do still — creme continua sendo o campo, não uma barra preta. */
+.hero-visual::before {
+  content: "";
+  position: absolute;
+  z-index: 4;
+  inset: 12px 14px;
+  border: 1px solid rgba(27, 25, 22, 0.28);
+  pointer-events: none;
+}
+
 .hero-visual::after {
   content: "";
   position: absolute;
+  z-index: 1;
   inset: 0;
   background: linear-gradient(
     180deg,
-    rgba(243, 239, 230, 0.08) 0%,
-    rgba(243, 239, 230, 0.02) 28%,
-    rgba(243, 239, 230, 0.72) 58%,
-    #f3efe6 78%
+    rgba(27, 25, 22, 0.05),
+    transparent 20% 80%,
+    rgba(27, 25, 22, 0.06)
   );
+  pointer-events: none;
 }
 
 .hero-reel {
   position: absolute;
-  z-index: 1;
+  z-index: 5;
   top: 22px;
-  right: 28px;
+  right: 26px;
   margin: 0;
   font-family: var(--mono);
   font-size: 11px;
@@ -341,26 +354,64 @@ body.page-home .brand-mark {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center top;
+  object-position: center 42%;
 }
 
 @keyframes hero-drift {
   from {
-    transform: scale(1.04);
+    transform: scale(1.05);
   }
   to {
-    transform: scale(1.09) translate3d(-1.4%, -1.2%, 0);
+    transform: scale(1.1) translate3d(-1.6%, -1%, 0);
   }
 }
 
 .hero-still {
-  transform-origin: center top;
-  animation: hero-drift 28s ease-in-out infinite alternate;
+  transform-origin: center 40%;
+}
+
+.hero-visual.is-live .hero-still {
+  animation: hero-drift 36s ease-in-out infinite alternate;
+}
+
+.hero-sheen {
+  position: absolute;
+  z-index: 2;
+  inset: -35% -55%;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(
+    104deg,
+    transparent 42%,
+    rgba(255, 250, 243, 0.62) 50%,
+    transparent 58%
+  );
+}
+
+.hero-visual.is-live .hero-sheen {
+  animation: cinema-sheen 11s ease-in-out infinite;
+}
+
+@keyframes cinema-sheen {
+  0%,
+  16% {
+    opacity: 0;
+    transform: translate3d(-12%, 0, 0);
+  }
+  34% {
+    opacity: 0.9;
+  }
+  52%,
+  100% {
+    opacity: 0;
+    transform: translate3d(14%, 0, 0);
+  }
 }
 
 .hero-canvas {
   display: none;
   position: absolute;
+  z-index: 2;
   inset: 0;
 }
 
@@ -375,7 +426,7 @@ body.page-home .brand-mark {
   flex-direction: column;
   justify-content: flex-start;
   width: 100%;
-  padding: 156px 32px 22px;
+  padding: 22px 28px 24px;
 }
 
 /* Prova social da marca guarda-chuva — não atribuir os 15 anos ao serviço NFS-e. */
@@ -442,11 +493,11 @@ h3 {
 }
 
 h1 {
-  font-size: clamp(3.05rem, 4.8vw, 5.05rem);
+  font-size: clamp(2.7rem, 4.15vw, 4.35rem);
   font-weight: 560;
   letter-spacing: -0.038em;
   line-height: 0.92;
-  max-width: 11.5ch;
+  max-width: 12ch;
 }
 
 h2 {
@@ -594,8 +645,56 @@ h2 {
 }
 
 .proof-note {
-  margin: 16px 0 0;
+  margin: 14px 0 0;
   max-width: 46rem;
+}
+
+/* Lugares vazios de propósito: sem logo, sem cliente e sem município contado. */
+.proof-slots {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 0;
+}
+
+.proof-slots li {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+  min-height: 92px;
+  margin: 0;
+  padding: 14px 16px 12px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: transparent;
+}
+
+.slot-kicker {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.proof-slots strong {
+  font-family: var(--display);
+  font-weight: 560;
+  font-size: 1.35rem;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+}
+
+.slot-empty {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.slot-empty::before {
+  content: "— ";
+  color: var(--accent);
 }
 
 @keyframes benefit-in {
@@ -988,66 +1087,111 @@ h2 {
   width: 72%;
 }
 
-.mock-pill {
+.mock-stamp {
   justify-self: start;
-  margin-top: 4px;
-  padding: 5px 12px;
-  border-radius: 999px;
-  background: var(--accent);
-  color: #fffaf5;
-  font-size: 12px;
-  font-weight: 600;
-  animation: mock-pill 8.5s ease-in-out infinite;
-  animation-delay: calc(var(--i) * 1.8s);
-}
-
-@keyframes mock-pill {
-  0%,
-  68%,
-  100% {
-    transform: scale(1);
-  }
-  76% {
-    transform: scale(0.96);
-  }
-  84% {
-    background: var(--accent-dark);
-  }
-}
-
-.mock-check {
-  width: 22px;
-  height: 22px;
-  margin-top: 4px;
-  border-radius: 50%;
-  border: 1.5px solid var(--forest);
   display: grid;
   place-items: center;
+  width: 58px;
+  height: 58px;
+  margin-top: 6px;
+  border: 1.5px solid var(--accent);
+  border-radius: 50%;
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transform: rotate(-8deg);
 }
 
-.mock-check::after {
-  content: "";
-  width: 8px;
-  height: 5px;
-  margin-top: -2px;
-  border-left: 1.5px solid var(--forest);
-  border-bottom: 1.5px solid var(--forest);
-  transform: rotate(-45deg) scale(0);
-  animation: check-pop 8.5s ease infinite;
-  animation-delay: calc(var(--i) * 1.8s);
+.flow-stage.is-live .mock-stamp {
+  animation: stamp-press 16s ease-in-out infinite;
+  animation-delay: calc(var(--i) * 4s);
 }
 
-@keyframes check-pop {
+@keyframes stamp-press {
   0%,
-  70% {
-    transform: rotate(-45deg) scale(0);
-  }
-  80%,
-  94% {
-    transform: rotate(-45deg) scale(1);
-  }
+  7%,
+  28%,
   100% {
-    transform: rotate(-45deg) scale(0);
+    transform: rotate(-8deg) scale(1);
+  }
+  12% {
+    transform: rotate(-12deg) scale(1.14);
+  }
+  18% {
+    transform: rotate(-8deg) scale(0.92);
+  }
+}
+
+.mock-check-svg {
+  width: 28px;
+  height: 28px;
+  margin-top: 4px;
+}
+
+.mock-check-svg circle,
+.mock-check-svg path {
+  fill: none;
+  stroke: var(--forest);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.mock-check-svg path {
+  stroke-dasharray: 22;
+  stroke-dashoffset: 0;
+}
+
+.flow-stage.is-live .mock-check-svg path {
+  animation: check-draw 16s ease-in-out infinite;
+  animation-delay: calc(var(--i) * 4s);
+}
+
+@keyframes check-draw {
+  0%,
+  6% {
+    stroke-dashoffset: 22;
+  }
+  18%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.mock-meter {
+  display: block;
+  width: 86%;
+  height: 4px;
+  margin-top: 4px;
+  border-radius: 999px;
+  background: rgba(36, 61, 50, 0.14);
+  overflow: hidden;
+}
+
+.mock-meter i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--accent);
+  transform-origin: left center;
+  transform: scaleX(1);
+}
+
+.flow-stage.is-live .mock-meter i {
+  animation: meter-fill 16s ease-in-out infinite;
+  animation-delay: calc(var(--i) * 4s);
+}
+
+@keyframes meter-fill {
+  0%,
+  8% {
+    transform: scaleX(0.06);
+  }
+  24%,
+  100% {
+    transform: scaleX(1);
   }
 }
 
@@ -1065,6 +1209,9 @@ h2 {
   height: 7px;
   border-radius: 50%;
   background: var(--accent);
+}
+
+.flow-stage.is-live .mock-status i {
   animation: status-blink 2.6s ease-in-out infinite;
 }
 
@@ -1092,11 +1239,15 @@ h2 {
   font-family: var(--mono);
   font-size: 12px;
   letter-spacing: 0.06em;
-  animation: file-in 8.5s ease-in-out infinite;
 }
 
-.mock-files span:last-child {
-  animation-delay: 0.35s;
+.flow-stage.is-live .mock-files span {
+  animation: file-in 16s ease-in-out infinite;
+  animation-delay: calc(var(--i) * 4s);
+}
+
+.flow-stage.is-live .mock-files span:last-child {
+  animation-delay: calc(var(--i) * 4s + 0.28s);
 }
 
 @keyframes file-in {
@@ -1129,6 +1280,29 @@ h2 {
   margin: 0;
   color: var(--ink-soft);
   font-size: 15px;
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .flow-card {
+    transition: transform 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  .flow-card:hover {
+    transform: translateY(-5px);
+  }
+
+  .flow-card:not(:first-child):not(:last-child):hover {
+    background: rgba(255, 250, 243, 0.72);
+  }
+
+  .flow-card:hover .flow-mock {
+    border-color: #c4a574;
+  }
+
+  .flow-card:hover .mock-stamp {
+    animation: none;
+    transform: rotate(-8deg) scale(0.94);
+  }
 }
 
 .ticket {
@@ -1671,7 +1845,8 @@ input:disabled {
   .faq-grid,
   .bento-grid,
   .section-head,
-  .flow-track {
+  .flow-track,
+  .proof-slots {
     grid-template-columns: 1fr;
   }
 
@@ -1715,23 +1890,30 @@ input:disabled {
   }
 
   .hero-poster {
-    border: none;
-    background: transparent;
-    overflow: visible;
+    border: 1px solid var(--line);
+    background: #f3efe6;
+    overflow: hidden;
   }
 
   .hero-visual {
     position: relative;
     inset: auto;
-    height: 196px;
-    margin: 0 0 14px;
-    border-radius: 20px;
-    border: 1px solid var(--line);
+    height: 164px;
+    margin: 0;
+    border-radius: 0;
+    border: none;
     overflow: hidden;
   }
 
+  .hero-visual.is-live .hero-still,
+  .hero-visual.is-live .hero-sheen,
+  .hero-still,
+  .hero-sheen {
+    animation: none;
+  }
+
   .hero-copy-inner {
-    padding: 0;
+    padding: 16px 16px 18px;
   }
 
   .hero-pills {
@@ -1806,23 +1988,57 @@ input:disabled {
   }
 }
 
+/* Altura curta (SE): o CTA do hero precisa ficar acima da barra fixa. */
+@media (max-width: 960px) and (max-height: 720px) {
+  .hero-visual {
+    height: 112px;
+  }
+
+  .hero-copy-inner {
+    padding: 12px 14px 12px;
+  }
+
+  .hero-pills {
+    margin-bottom: 8px;
+  }
+
+  .page-home h1 {
+    font-size: 2rem;
+    margin-bottom: 10px;
+  }
+
+  .hero-actions {
+    margin-bottom: 10px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
   }
 
   .hero-canvas,
+  .hero-sheen,
   .flow-runner {
     display: none;
   }
 
+  .hero-visual.is-live .hero-still,
+  .hero-visual.is-live .hero-sheen,
+  .flow-stage.is-live .mock-stamp,
+  .flow-stage.is-live .mock-check-svg path,
+  .flow-stage.is-live .mock-meter i,
+  .flow-stage.is-live .mock-status i,
+  .flow-stage.is-live .mock-files span,
   .hero-still,
+  .hero-sheen,
   .benefit,
   .benefit::before,
   .proof-badge::before,
   .flow-card,
-  .mock-pill,
-  .mock-check::after,
+  .mock-stamp,
+  .mock-check-svg path,
+  .mock-meter i,
   .mock-status i,
   .mock-files span {
     animation: none;
@@ -1830,8 +2046,21 @@ input:disabled {
 
   .benefit,
   .mock-files span,
-  .mock-check::after {
+  .mock-stamp,
+  .mock-meter i {
     opacity: 1;
+    transform: none;
+  }
+
+  .mock-stamp {
+    transform: rotate(-8deg);
+  }
+
+  .mock-check-svg path {
+    stroke-dashoffset: 0;
+  }
+
+  .flow-card:hover {
     transform: none;
   }
 
