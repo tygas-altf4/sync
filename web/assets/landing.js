@@ -137,8 +137,9 @@ async function falarUpgrade(planCode) {
     /* handoff é stub se o banco não estiver no ar */
   }
   window.location.hash = 'comecar';
+  const planLabel = { starter89: 'Starter', pro249: 'Pro', scale549: 'Scale' }[planCode] ?? planCode;
   setStatus(
-    `Upgrade ${planCode} registrado pra o Dinheiro Bot. Sem cobrança nesta página — deixa seu contato no form.`,
+    `Upgrade ${planLabel} registrado pra o Dinheiro Bot. Sem cobrança nesta página — deixa seu contato no form.`,
     'ok',
   );
 }
