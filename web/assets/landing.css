@@ -1988,6 +1988,30 @@ input:disabled {
   }
 }
 
+/* Altura curta (SE): o CTA do hero precisa ficar acima da barra fixa. */
+@media (max-width: 960px) and (max-height: 720px) {
+  .hero-visual {
+    height: 112px;
+  }
+
+  .hero-copy-inner {
+    padding: 12px 14px 12px;
+  }
+
+  .hero-pills {
+    margin-bottom: 8px;
+  }
+
+  .page-home h1 {
+    font-size: 2rem;
+    margin-bottom: 10px;
+  }
+
+  .hero-actions {
+    margin-bottom: 10px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
