@@ -186,8 +186,8 @@ function heroCanvasAllowed() {
 
 function mountHeroCanvas() {
   const canvas = document.getElementById('hero-canvas');
-  const frame = canvas?.parentElement;
-  if (!(canvas instanceof HTMLCanvasElement) || !frame) return;
+  const stage = canvas?.parentElement;
+  if (!(canvas instanceof HTMLCanvasElement) || !stage) return;
 
   const ctx = canvas.getContext('2d', { alpha: true });
   if (!ctx) return;
@@ -287,7 +287,7 @@ function mountHeroCanvas() {
   function play() {
     if (!heroCanvasAllowed() || playing || document.hidden || !inView) return;
     playing = true;
-    frame.classList.add('is-live');
+    stage.classList.add('is-live');
     canvas.classList.add('is-on');
     start = performance.now();
     last = 0;
@@ -297,7 +297,7 @@ function mountHeroCanvas() {
 
   function pause() {
     playing = false;
-    frame.classList.remove('is-live');
+    stage.classList.remove('is-live');
     canvas.classList.remove('is-on');
     window.cancelAnimationFrame(raf);
   }
@@ -310,7 +310,7 @@ function mountHeroCanvas() {
     },
     { threshold: [0, 0.2, 0.45] },
   );
-  observer.observe(frame);
+  observer.observe(stage);
 
   function onVisibility() {
     if (document.hidden) pause();
