@@ -82,7 +82,7 @@ npx --yes wrangler@latest deploy  # SEM --temporary
 
 Hostname esperado: `https://plvria-sync-hotsite-preview.<subdomínio-da-conta>.workers.dev/`.
 
-**Fallback efêmero** (`--temporary`) — só quando não há conta claimed no ambiente. Cria conta de preview. **Claim obrigatório em 60 min** — sem claim o Worker some e a URL passa a responder 500 (é o que matou `picturesque-vessel.workers.dev` e `chartreuse-frost.workers.dev`). Abrir o link não basta: entrar/criar conta Cloudflare e completar o fluxo no Claim URL.
+**Fallback efêmero** (`--temporary`) — só quando não há conta claimed no ambiente. Cria conta de preview. **Claim obrigatório em 60 min** — sem claim o Worker some e a URL passa a responder 500 (é o que matou `picturesque-vessel.workers.dev` e `chartreuse-frost.workers.dev`). Abrir o link não basta: entrar/criar conta Cloudflare e completar o fluxo no Claim URL. Conta temp sem claim também pode servir interstitial Cloudflare (`Just a moment…` / 403 no curl); o browser passa o desafio. Deploy nomeado na conta claimed evita esse TTL e o challenge de preview.
 
 ```bash
 npm install
