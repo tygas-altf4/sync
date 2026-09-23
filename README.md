@@ -84,7 +84,7 @@ npx --yes wrangler@latest deploy --temporary
 2. Deploy nomeado numa conta Cloudflare própria (`wrangler deploy` **sem** `--temporary`, hostname `*.workers.dev` da conta) — continua staging, **sem** CNAME/A de `sync.plvria.com.br`, **ou**
 3. Host canônico `https://sync.plvria.com.br` só depois do ok Dinheiro Bot + Thiago (DNS/proxy fora deste PR).
 
-Sem `wrangler.toml` de custom domain neste repo. Worker: `workers/vitrine.ts` + assets `web/`. Preview conhecido (enquanto o claim valer): `https://plvria-sync-hotsite-preview.chartreuse-frost.workers.dev/`.
+Sem `wrangler.toml` de custom domain neste repo. Worker: `workers/vitrine.ts` + assets `web/`. Preview conhecido (enquanto o claim valer): `https://plvria-sync-hotsite-preview.peppermint-spider.workers.dev/` (alias `https://plvria-nfse-hotsite-today.peppermint-spider.workers.dev/`). Previews anteriores (`chartreuse-frost`, `unleashed-couch`, `inquisitive-sofa`) expiraram — GET passou a 500.
 
 **Env do preview** (`wrangler.jsonc` `vars` — stubs para o app bootar):
 
